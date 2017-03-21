@@ -9,16 +9,23 @@ class RVWindow(QWidget):
         QWidget.__init__(self)
         layout = QVBoxLayout(self)
 
-        topFiller = QWidget()
-        topFiller.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        infoLabel = QLabel("<i>There's some text here</i>")
-        infoLabel.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
-        infoLabel.setAlignment(Qt.AlignCenter)
-        bottomFiller = QWidget()
-        bottomFiller.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        splitter = QSplitter()
+        layout.addWidget(splitter)
 
-        layout.addWidget(topFiller)
-        layout.addWidget(infoLabel)
-        layout.addWidget(bottomFiller)
+        leftFiller = QWidget()
 
+        # Graphics
+        self.scene = QGraphicsScene()
+        self.view = QGraphicsView(self.scene)
+        self.view.setRenderHints(QPainter.Antialiasing)
+        self.view.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
+        self.view.setAlignment(Qt.AlignCenter)
+        self.view.setMinimumSize(400, 300)
+
+        # Fill in layout
+        splitter.addWidget(leftFiller)
+        splitter.addWidget(self.view)
         self.setLayout(layout)
+
+    def sizeHint(self):
+        return QSize(1280, 720)
