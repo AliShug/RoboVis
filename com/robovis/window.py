@@ -6,6 +6,7 @@ from PyQt5.QtGui import *
 
 from com.robovis.view import RVView
 from com.robovis.panes import RVParamPane
+from com.robovis.outline import RVOutline
 
 class RVWindow(QWidget):
     def __init__(self):
@@ -32,13 +33,8 @@ class RVWindow(QWidget):
         self.setLayout(layout)
 
         # Fill in scene
-        poly = QPolygonF([
-            QPointF(0,0),
-            QPointF(50,0),
-            QPointF(50,50),
-            QPointF(0,50)
-        ])
-        self.scene.addPolygon(poly, pen=QPen(Qt.white))
+        outline = RVOutline((60,120))
+        item = self.view.addOutline(outline)
 
     def sizeHint(self):
         return QSize(1280, 720)
