@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 from matplotlib import pyplot as plt
 
 from util import *
@@ -10,12 +11,16 @@ height = 800
 goals = np.zeros((width,height,2))
 for j in range(height):
     for i in range(width):
-        goals[i,j]=[i-400, -j+height/2]
+        goals[i,j]=[i+18.71, -j+height/2]
 
+# Config
 origin=np.array([18.71,0])
-
 elevator_length = 148.4
 forearm_length = 160.0
+linkage_length = 155
+lower_actuator_length = 65
+upper_actuator_length = 54.4
+wrist_length = 90.52
 
 valid=np.ones((width,height), dtype=bool)
 centers = np.array(goals)
@@ -82,9 +87,9 @@ for j in range(height):
 elevator_vecs = elbows - origin
 forearm_vecs = goals - elbows
 
-print(elbows)
+# print(elbows)
 elbows = np.ma.masked_array(elbows, np.isnan(elbows))
-goals = np.ma.masked_array(goals, elbows.mask)
+# goals = np.ma.masked_array(goals, elbows.mask)
 
 # plt.scatter(elbows[:, :, 0], elbows[:, :, 1], s=1)
 # plt.scatter(goals[:, :, 0], goals[:, :, 1], s=1)
@@ -98,23 +103,72 @@ vdots = np.inner(elevator_norms, vertical)
 hdots = np.inner(elevator_norms, horizontal)
 elevator_angles = np.arccos(vdots) * ((hdots > 0)*2 - 1)
 # convert to servo setting
-elevator_servo = (np.degrees(elevator_angles) - 178.21) * -1
+elevator_servos = (np.degrees(elevator_angles) - 178.21) * -1
 # hacky but it works - divide by zero to clear out-of-range areas
-elevator_servo /= (np.logical_and(elevator_servo > 60, elevator_servo < 210)*1)
+elevator_servos /= (np.logical_and(elevator_servos > 60, elevator_servos < 210)*1)
 
 forearm_norms = forearm_vecs/forearm_length
 vdots = np.inner(forearm_norms, vertical)
 hdots = np.inner(forearm_norms, horizontal)
 forearm_angles = np.arccos(vdots) * ((hdots > 0)*2 - 1)
-elevator_ok = (np.logical_and(elevator_servo > 60, elevator_servo < 210)*1)
+elevator_ok = (np.logical_and(elevator_servos > 60, elevator_servos < 210)*1)
 forearm_ok = (np.logical_and(forearm_angles > 0, forearm_angles < 180)*1)
-ok = ((elevator_ok*forearm_ok) - 1) * -1
-goals = np.ma.masked_array(goals, np.dstack([ok,ok]))
 #img = np.logical_and(forearm_vecs[:,:,0] > 0, elevator_vecs[:,:,0] > 0)
 
+# Elevator-forearm angle (elbow angle)
+# Element-wise dot product
+elbow_angles = np.arccos(np.einsum("ijk, ijk -> ij", elevator_norms, forearm_norms))
+
+# Base angles are between the elevators and actuators (NOT the forearms!)
+A = linkage_length
+B = upper_actuator_length
+C = elevator_length
+D = lower_actuator_length
+# Repeated application of cosine rule yields the forearm angle
+# Y is a diagonal across the irregular quatrilateral (opposite
+# desired)
+Ysq = C**2 + B**2 - 2*C*B*np.cos(elbow_angles)
+Y = np.sqrt(Ysq)
+# foo and bar are the two angles adjacent to Y in the quat
+cosFoo = np.clip((Ysq + D**2 - A**2) / (2*Y*D), -1, 1)
+cosBar = np.clip((Ysq + C**2 - B**2) / (2*Y*C), -1, 1)
+foo = np.arccos(cosFoo)
+bar = np.arccos(cosBar)
+# together they form the angle between the elevator and actuator
+base_angles = foo + bar
+# Actuator angles are then just the elevator - the base angle
+actuator_angles = elevator_angles - base_angles
+
+# Constraints
+# limit actuator servo angles
+actuator_servos = (np.degrees(actuator_angles) + 204.78)
+actuator_ok = (actuator_servos > 100)*1 * (actuator_servos < 250)*1
+# diff angle
+base_ok = (np.degrees(base_angles) > 44)*1 *(np.degrees(base_angles) < 175)*1
+# forearm angle
+forearm_ok = (np.degrees(forearm_angles) > 80)*1 * (np.degrees(forearm_angles) < 200)*1
+# elbow angle
+elbow_ok = (np.degrees(elbow_angles) > 10)*1
+
+
+ok = elevator_ok*forearm_ok*actuator_ok*base_ok*forearm_ok*elbow_ok
+# Contour-map the reachable region
+im2, contours, hierarchy = cv2.findContours(np.array(-ok, np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+print(contours[0])
+
+# Mask out unreachable goals and plot
+ok = -1*(ok-1)
+goals = np.ma.masked_array(goals, np.dstack([ok,ok]))
+
 plt.clf()
-# plt.imshow(ok.T, origin='lower')
-plt.scatter(origin[0], origin[1])
-plt.scatter(goals[:, :, 0], goals[:, :, 1], s=1)
-# plt.imshow(elevator_servo.T, origin='lower')
+extent = [18.71+wrist_length,818.71+wrist_length,-400,400]
+# plt.imshow(ok.T)
+# plt.scatter(origin[0], origin[1])
+# plt.scatter(goals[:, :, 0], goals[:, :, 1], s=1)
+# plt.imshow(elevator_servos.T, extent=extent)
+# plt.imshow(np.degrees(elbow_angles).T, extent=extent)
+# plt.imshow(np.degrees(base_angles).T, extent=extent)
+# plt.imshow(actuator_servos.T, extent=extent)
+plt.imshow(ok.T, extent=extent)
+# plt.imshow(im2.T, extent=extent)
 plt.show()
