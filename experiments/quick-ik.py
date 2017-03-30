@@ -5,12 +5,12 @@ from util import *
 from solvers import Circle
 # from litearm import ArmController
 
-width = 300
-height = 600
+width = 800
+height = 800
 goals = np.zeros((width,height,2))
 for j in range(height):
     for i in range(width):
-        goals[i,j]=[i+40, -j+height/2]
+        goals[i,j]=[i-400, -j+height/2]
 
 origin=np.array([18.71,0])
 
@@ -86,8 +86,35 @@ print(elbows)
 elbows = np.ma.masked_array(elbows, np.isnan(elbows))
 goals = np.ma.masked_array(goals, elbows.mask)
 
-plt.scatter(elbows[:, :, 0], elbows[:, :, 1], s=1)
+# plt.scatter(elbows[:, :, 0], elbows[:, :, 1], s=1)
 # plt.scatter(goals[:, :, 0], goals[:, :, 1], s=1)
+# plt.grid(True)
+# plt.show()
+
+# Show the elevator/forearm angle
+# Need to calculate angle from vertical; can be negative
+elevator_norms = elevator_vecs/elevator_length
+vdots = np.inner(elevator_norms, vertical)
+hdots = np.inner(elevator_norms, horizontal)
+elevator_angles = np.arccos(vdots) * ((hdots > 0)*2 - 1)
+# convert to servo setting
+elevator_servo = (np.degrees(elevator_angles) - 178.21) * -1
+# hacky but it works - divide by zero to clear out-of-range areas
+elevator_servo /= (np.logical_and(elevator_servo > 60, elevator_servo < 210)*1)
+
+forearm_norms = forearm_vecs/forearm_length
+vdots = np.inner(forearm_norms, vertical)
+hdots = np.inner(forearm_norms, horizontal)
+forearm_angles = np.arccos(vdots) * ((hdots > 0)*2 - 1)
+elevator_ok = (np.logical_and(elevator_servo > 60, elevator_servo < 210)*1)
+forearm_ok = (np.logical_and(forearm_angles > 0, forearm_angles < 180)*1)
+ok = ((elevator_ok*forearm_ok) - 1) * -1
+goals = np.ma.masked_array(goals, np.dstack([ok,ok]))
+#img = np.logical_and(forearm_vecs[:,:,0] > 0, elevator_vecs[:,:,0] > 0)
+
+plt.clf()
+# plt.imshow(ok.T, origin='lower')
 plt.scatter(origin[0], origin[1])
-plt.grid(True)
+plt.scatter(goals[:, :, 0], goals[:, :, 1], s=1)
+# plt.imshow(elevator_servo.T, origin='lower')
 plt.show()
