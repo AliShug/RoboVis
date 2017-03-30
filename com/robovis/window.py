@@ -7,6 +7,8 @@ from PyQt5.QtGui import *
 from com.robovis.view import RVView
 from com.robovis.panes import RVParamPane
 from com.robovis.outline import RVOutline
+from com.robovis.config import RVConfig
+from com.robovis.ik import RVIK
 
 class RVWindow(QWidget):
     def __init__(self):
@@ -18,7 +20,7 @@ class RVWindow(QWidget):
         layout.addWidget(splitter)
 
         # leftFiller = QWidget()
-        paramPane = RVParamPane()
+        paramPane = RVParamPane(self)
 
         # Graphics
         self.scene = QGraphicsScene()
@@ -33,8 +35,15 @@ class RVWindow(QWidget):
         self.setLayout(layout)
 
         # Fill in scene
-        outline = RVOutline((60,120))
-        item = self.view.addOutline(outline)
+        self.current_config = RVConfig()
+        self.ik = RVIK(self.current_config)
+        self.outline = RVOutline(self.ik.contour)
+        item = self.view.addOutline(self.outline)
+
+    def configModified(self):
+        '''Call when the configuration has been modified - regenerates the outline(s)'''
+        self.ik.calculate()
+        self.outline.setContour(self.ik.contour)
 
     def sizeHint(self):
         return QSize(1280, 720)
