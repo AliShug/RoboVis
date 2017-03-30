@@ -24,12 +24,12 @@ class RVIK(object):
         wrist_length = self.config.wrist_length
 
         # The maximum possible distance
-        width = int(np.ceil(elevator_length + forearm_length))
+        width = int(np.ceil((elevator_length + forearm_length)/4))
         height = 2*width
         goals = np.zeros((width,height,2))
         for j in range(height):
             for i in range(width):
-                goals[i,j]=[i, -j+height/2]
+                goals[i,j]=[i*4, (-j+height/2)*4]
 
         valid = np.ones((width,height), dtype=bool)
         dists = np.linalg.norm(goals, axis=2)
@@ -122,4 +122,7 @@ class RVIK(object):
         ok = elevator_ok*forearm_ok*actuator_ok*base_ok*forearm_ok*elbow_ok
         # Contour-map the reachable region
         im2, contours, hierarchy = cv2.findContours(np.array(-ok, np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        self.contour = contours[0]
+        if len(contours) > 0:
+            self.contour = contours[0] * 4
+        else:
+            self.contour = None

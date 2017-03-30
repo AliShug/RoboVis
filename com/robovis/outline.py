@@ -22,6 +22,7 @@ class RVOutline(object):
     def updateGraphics(self):
         if self.graphicsItem:
             poly = QPolygonF()
-            for i in range(self.contour.shape[0]):
-                poly << QPointF(self.contour[i, 0, 1], -self.contour[i, 0, 0])
+            if self.contour is not None:
+                for i in range(self.contour.shape[0]):
+                    poly << QPointF(self.contour[i, 0, 1], -self.contour[i, 0, 0])
             self.graphicsItem.setPolygon(poly)
