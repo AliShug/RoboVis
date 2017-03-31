@@ -8,3 +8,6 @@ class RVConfig(object):
         self.lower_actuator_length = 65
         self.upper_actuator_length = 54.4
         self.wrist_length = 90.52
+
+    def setRodRatio(self, ratio):
+        self.linkage_length = ratio * self.elevator_length

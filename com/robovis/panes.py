@@ -11,7 +11,7 @@ class RVParamPane(QGroupBox):
         params = [
             ('Elevator Length', 1000, 6000, 'elevator_length', self.onChangeElevatorLength),
             ('Forearm Length', 1000, 6000, 'forearm_length', self.onChangeForearmLength),
-            ('Rod Ratio', 3, 150, 'rod_ratio', None),
+            ('Rod Ratio', 33, 300, 'rod_ratio', self.onChangeRodRatio),
             ('Elevator Torque', 0, 500, 'elevator_torque', None),
             ('Actuator Torque', 0, 500, 'actuator_torque', None),
         ]
@@ -46,7 +46,6 @@ class RVParamPane(QGroupBox):
         value_box = self.valueboxes['elevator_length']
         adjusted_val = float(slider.value())/10
         value_box.setPlaceholderText(str(adjusted_val))
-        print(adjusted_val)
         self.window.current_config.elevator_length = adjusted_val
         self.window.current_config.linkage_length = adjusted_val
         self.window.configModified()
@@ -56,6 +55,13 @@ class RVParamPane(QGroupBox):
         value_box = self.valueboxes['forearm_length']
         adjusted_val = float(slider.value())/10
         value_box.setPlaceholderText(str(adjusted_val))
-        print(adjusted_val)
         self.window.current_config.forearm_length = adjusted_val
+        self.window.configModified()
+
+    def onChangeRodRatio(self):
+        slider = self.sliders['rod_ratio']
+        value_box = self.valueboxes['rod_ratio']
+        adjusted_val = float(slider.value())/100
+        value_box.setPlaceholderText(str(adjusted_val))
+        self.window.current_config.setRodRatio(adjusted_val)
         self.window.configModified()

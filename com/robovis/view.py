@@ -14,6 +14,11 @@ class RVView(QGraphicsView):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.scale(1, -1)
         self.outlines = []
+        self.initScene()
+
+    def initScene(self):
+        self.scene.addLine(-50, 0, 600, 0, pen=QPen(Qt.red))
+        self.scene.addLine(0, -600, 0, 600, pen=QPen(Qt.green))
 
     def addOutline(self, outline):
         item = self.scene.addPolygon(QPolygonF(), pen=QPen(Qt.white))

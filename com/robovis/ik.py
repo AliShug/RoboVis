@@ -24,14 +24,14 @@ class RVIK(object):
         wrist_length = self.config.wrist_length
 
         # The maximum possible distance
-        width = int(np.ceil((elevator_length + forearm_length)/4))
-        height = 2*width
-        goals = np.zeros((width,height,2))
-        for j in range(height):
-            for i in range(width):
-                goals[i,j]=[i*4, (-j+height/2)*4]
+        self.width = int(np.ceil((elevator_length + forearm_length)/4))
+        self.height = 2*self.width
+        goals = np.zeros((self.width,self.height,2))
+        for j in range(self.height):
+            for i in range(self.width):
+                goals[i,j]=[i*4, (-j+self.height/2)*4]
 
-        valid = np.ones((width,height), dtype=bool)
+        valid = np.ones((self.width,self.height), dtype=bool)
         dists = np.linalg.norm(goals, axis=2)
 
         # close enough for intersection
@@ -49,9 +49,9 @@ class RVIK(object):
         i2 = np.array(p2)
         i2 += [-1,1] * np.dstack([h,h]) * (-goals)[:,:,::-1] / np.dstack([dists,dists])
         # Pick the higher solutions as the elbow points
-        elbows = np.zeros((width, height, 2))
-        for j in range(height):
-            for i in range(width):
+        elbows = np.zeros((self.width, self.height, 2))
+        for j in range(self.height):
+            for i in range(self.width):
                 if i1[i, j, 1] > i2[i, j, 1]:
                     elbows[i, j] = i1[i, j]
                 else:
@@ -126,3 +126,8 @@ class RVIK(object):
             self.contour = contours[0] * 4
         else:
             self.contour = None
+
+        self.valid_points = np.sum(ok)
+        self.valid_indices = np.dstack(np.where(ok)).reshape(self.valid_points, 2)
+        print(self.valid_indices.shape)
+        print(self.valid_points)

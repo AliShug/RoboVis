@@ -37,7 +37,7 @@ class RVWindow(QWidget):
         # Fill in scene
         self.current_config = RVConfig()
         self.ik = RVIK(self.current_config)
-        self.outline = RVOutline(self.ik.contour)
+        self.outline = RVOutline(self.ik)
         item = self.view.addOutline(self.outline)
 
     def configModified(self):
