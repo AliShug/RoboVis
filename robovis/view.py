@@ -21,7 +21,7 @@ class RVView(QGraphicsView):
         self.scene.addLine(0, -600, 0, 600, pen=QPen(Qt.green))
 
     def addOutline(self, outline):
-        item = self.scene.addPolygon(QPolygonF(), pen=QPen(Qt.white))
+        item = self.scene.addPolygon(QPolygonF(), pen=QPen(QBrush(outline.color), outline.thickness))
         outline.setGraphicsItem(item)
         self.outlines.append(outline)
         return item

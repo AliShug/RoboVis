@@ -2,18 +2,20 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
+from robovis import *
+
 class RVParamPane(QGroupBox):
-    def __init__(self, window):
+    def __init__(self, window, config=RVConfig()):
         QGroupBox.__init__(self, 'Parameters')
         self.window = window
         layout = QVBoxLayout()
 
         params = [
-            ('Elevator Length', 1000, 6000, 'elevator_length', self.onChangeElevatorLength),
-            ('Forearm Length', 1000, 6000, 'forearm_length', self.onChangeForearmLength),
-            ('Rod Ratio', 33, 300, 'rod_ratio', self.onChangeRodRatio),
-            ('Elevator Torque', 0, 500, 'elevator_torque', None),
-            ('Actuator Torque', 0, 500, 'actuator_torque', None),
+            ('Elevator Length', 1000, 6000, 'elevator_length', self.onChangeElevatorLength, config.elevator_length, 10),
+            ('Forearm Length', 1000, 6000, 'forearm_length', self.onChangeForearmLength, config.forearm_length, 10),
+            ('Rod Ratio', 33, 300, 'rod_ratio', self.onChangeRodRatio, config.getRodRatio(), 100),
+            ('Elevator Torque', 0, 500, 'elevator_torque', None, 0, 10),
+            ('Actuator Torque', 0, 500, 'actuator_torque', None, 0, 10),
         ]
 
         self.sliders = {}
@@ -36,6 +38,13 @@ class RVParamPane(QGroupBox):
             row.addWidget(value_box)
             self.sliders[p[3]] = slider
             self.valueboxes[p[3]] = value_box
+
+            slider.blockSignals(True)
+            value_box.blockSignals(True)
+            slider.setValue(int(p[5]*p[6]))
+            value_box.setPlaceholderText(str(p[5]))
+            slider.blockSignals(False)
+            value_box.blockSignals(False)
             # row.setSizeConstraint(QLayout.SetMaximumSize)
 
         self.setLayout(layout)
@@ -46,8 +55,7 @@ class RVParamPane(QGroupBox):
         value_box = self.valueboxes['elevator_length']
         adjusted_val = float(slider.value())/10
         value_box.setPlaceholderText(str(adjusted_val))
-        self.window.current_config.elevator_length = adjusted_val
-        self.window.current_config.linkage_length = adjusted_val
+        self.window.current_config.setElevator(adjusted_val)
         self.window.configModified()
 
     def onChangeForearmLength(self):

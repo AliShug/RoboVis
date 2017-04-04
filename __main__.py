@@ -2,7 +2,7 @@ import sys
 
 from PyQt5.QtWidgets import QApplication
 
-from com.robovis.window import RVWindow
+from robovis import *
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

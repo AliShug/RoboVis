@@ -13,6 +13,7 @@ class RVIK(object):
         self.config = config
         self.calculate()
 
+    # @profile
     def calculate(self):
         '''Calculates the set of IK solutions, revealing the reachable area'''
         # Config
@@ -24,38 +25,53 @@ class RVIK(object):
         wrist_length = self.config.wrist_length
 
         # The maximum possible distance
-        self.width = int(np.ceil((elevator_length + forearm_length)/4))
+        resolution = 200
+        max_dist = elevator_length + forearm_length
+        self.width = resolution
         self.height = 2*self.width
-        goals = np.zeros((self.width,self.height,2))
-        for j in range(self.height):
-            for i in range(self.width):
-                goals[i,j]=[i*4, (-j+self.height/2)*4]
+        step = max_dist/resolution
+        x = np.arange(self.width) * step
+        y = (self.height / 2 - np.arange(self.height)) * step
+        goals = np.dstack(np.meshgrid(y, x))[:,:,::-1]
+        # goals = np.zeros((self.width,self.height,2))
+        # for j in range(self.height):
+        #     for i in range(self.width):
+        #         goals[i,j]=[i*step, (-j+self.height/2)*step]
+        # print(goals)
 
         valid = np.ones((self.width,self.height), dtype=bool)
         dists = np.linalg.norm(goals, axis=2)
 
         # close enough for intersection
-        valid &= dists < forearm_length + elevator_length
-        valid &= dists > 0
+        # valid &= dists < forearm_length + elevator_length
+        # valid &= dists > 0
         # intersect
+        stack_dists = np.dstack([dists,dists])
         a = (forearm_length**2 - elevator_length**2 + dists**2) / (dists*2)
         h = np.sqrt(forearm_length**2 - a**2)
-        p2 = goals + (np.dstack([a,a])*(-goals)) / np.dstack([dists,dists])
+        p2 = goals + (np.dstack([a,a])*(-goals)) / stack_dists
         i1 = np.array(p2)
         # [:, :, ::-1] flips x and y coords
         # dstack is a lazy way to get the scalar h/dists to multiply across the vectors
         # - it just doubles up the scalar to e.g. [h, h] so becomes [h,h]*[xi,yi]
-        i1 += [1,-1] * np.dstack([h,h]) * (-goals)[:,:,::-1] / np.dstack([dists,dists])
+        stack_h = np.dstack([h,h])
+        flipped_goals = (-goals)[:,:,::-1]
+        i_chunk = stack_h * flipped_goals / stack_dists
+        i1 += [1,-1] * i_chunk
         i2 = np.array(p2)
-        i2 += [-1,1] * np.dstack([h,h]) * (-goals)[:,:,::-1] / np.dstack([dists,dists])
+        i2 += [-1,1] * i_chunk
         # Pick the higher solutions as the elbow points
-        elbows = np.zeros((self.width, self.height, 2))
-        for j in range(self.height):
-            for i in range(self.width):
-                if i1[i, j, 1] > i2[i, j, 1]:
-                    elbows[i, j] = i1[i, j]
-                else:
-                    elbows[i, j] = i2[i, j]
+        # elbows = np.zeros((self.width, self.height, 2))
+        # for j in range(self.height):
+        #     for i in range(self.width):
+        #         if i1[i, j, 1] > i2[i, j, 1]:
+        #             elbows[i, j] = i1[i, j]
+        #         else:
+        #             elbows[i, j] = i2[i, j]
+        i1_greater = i1[:,:,1] > i2[:,:,1]
+        i1_greater = np.dstack([i1_greater, i1_greater])
+        i2_greater = ~ i1_greater
+        elbows = i1_greater * i1 + i2_greater * i2
 
         # Get the elevator and forearm vectors
         elevator_vecs = elbows
@@ -123,7 +139,7 @@ class RVIK(object):
         # Contour-map the reachable region
         im2, contours, hierarchy = cv2.findContours(np.array(-ok, np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
-            self.contour = contours[0] * 4
+            self.contour = (contours[0] - [self.height/2, 0]) * step
         else:
             self.contour = None
 

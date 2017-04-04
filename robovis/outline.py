@@ -6,13 +6,15 @@ from PyQt5.QtGui import *
 
 
 class RVOutline(object):
-    def __init__(self, ik):
+    def __init__(self, ik, color=Qt.white, thickness=1):
         '''Takes an IK solution object'''
         self.graphicsItem = None
         self.contour = ik.contour
         self.width = ik.width
         self.height = ik.height
         self.ik = ik
+        self.color = color
+        self.thickness = thickness
 
     def setGraphicsItem(self, item):
         self.graphicsItem = item
@@ -27,5 +29,5 @@ class RVOutline(object):
             poly = QPolygonF()
             if self.contour is not None:
                 for i in range(self.contour.shape[0]):
-                    poly << QPointF(self.contour[i, 0, 1], -self.contour[i, 0, 0] + self.height*2)
+                    poly << QPointF(self.contour[i, 0, 1], -self.contour[i, 0, 0])
             self.graphicsItem.setPolygon(poly)
