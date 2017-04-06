@@ -39,7 +39,7 @@ class RVView(QGraphicsView):
             func(event)
 
     def leaveEvent(self, event):
-        for func in self.subscribers['leaveEvent']:
+        for func in self.subscribers['mouseLeave']:
             func(event)
 
     def mouseMoveEvent(self, event):

@@ -5,7 +5,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
 from robovis import *
-
+from robovis import RVArmVis
 
 class RVWindow(QWidget):
     def __init__(self):
@@ -49,6 +49,9 @@ class RVWindow(QWidget):
             self.view.addOutline(more_outline)
             self.ghost_outlines.append(less_outline)
             self.ghost_outlines.append(more_outline)
+
+        # Arm vis
+        self.arm_vis = RVArmVis(self.current_config, self.scene)
 
     def configModified(self):
         '''Call when the configuration has been modified - regenerates the outline(s)'''

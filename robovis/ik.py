@@ -4,9 +4,24 @@ from matplotlib import pyplot as plt
 
 
 class RVIK(object):
-    def __init__(self, config = None):
-        if config:
+    def __init__(self, config = None, resolution = None, point = None):
+        self.point_results = None
+        if resolution is not None:
+            self.resolution = resolution
+        else:
+            self.resolution = 200
+            if point is not None:
+                self.point_mode = True
+                self.point = point
+            else:
+                self.point_mode = False
+        if config is not None:
             self.setConfig(config)
+
+    def setPoint(self, point):
+        '''Sets a goal point to solve for, rather than solving the full range'''
+        self.point_mode = True
+        self.point = point
 
     def setConfig(self, config):
         '''Set the configuration for the solver, and recalculate the IK solution set'''
@@ -24,27 +39,29 @@ class RVIK(object):
         upper_actuator_length = self.config.upper_actuator_length
         wrist_length = self.config.wrist_length
 
-        # The maximum possible distance
-        resolution = 200
-        max_dist = elevator_length + forearm_length
-        self.width = resolution
-        self.height = 2*self.width
-        step = max_dist/resolution
-        x = np.arange(self.width) * step
-        y = (self.height / 2 - np.arange(self.height)) * step
-        goals = np.dstack(np.meshgrid(y, x))[:,:,::-1]
-        # goals = np.zeros((self.width,self.height,2))
-        # for j in range(self.height):
-        #     for i in range(self.width):
-        #         goals[i,j]=[i*step, (-j+self.height/2)*step]
-        # print(goals)
+        # Generate goals (or just use point mode)
+        if self.point_mode:
+            self.goals = np.array([[self.point]])
+            self.width = 1
+            self.height = 1
+        else:
+            # The maximum possible distance
+            max_dist = elevator_length + forearm_length
+            self.width = self.resolution
+            self.height = 2*self.width
+            step = max_dist/self.resolution
+            x = np.arange(self.width) * step
+            y = (self.height / 2 - np.arange(self.height)) * step
+            goals = np.dstack(np.meshgrid(y, x))[:,:,::-1]
+            # goals = np.zeros((self.width,self.height,2))
+            # for j in range(self.height):
+            #     for i in range(self.width):
+            #         goals[i,j]=[i*step, (-j+self.height/2)*step]
+            # print(goals)
 
-        valid = np.ones((self.width,self.height), dtype=bool)
         dists = np.linalg.norm(goals, axis=2)
 
         # close enough for intersection
-        # valid &= dists < forearm_length + elevator_length
-        # valid &= dists > 0
         # intersect
         stack_dists = np.dstack([dists,dists])
         a = (forearm_length**2 - elevator_length**2 + dists**2) / (dists*2)
@@ -136,14 +153,23 @@ class RVIK(object):
 
 
         ok = elevator_ok*forearm_ok*actuator_ok*base_ok*forearm_ok*elbow_ok
-        # Contour-map the reachable region
-        im2, contours, hierarchy = cv2.findContours(np.array(-ok, np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        if len(contours) > 0:
-            self.contour = (contours[0] - [self.height/2, 0]) * step
-        else:
-            self.contour = None
 
-        self.valid_points = np.sum(ok)
-        self.valid_indices = np.dstack(np.where(ok)).reshape(self.valid_points, 2)
-        print(self.valid_indices.shape)
-        print(self.valid_points)
+        if self.point_mode:
+            # TODO: In point mode we just want the point's results
+            self.point_results = {
+                'ok' : ok[0,0],
+                'elbow_pos' : elbows[0,0],
+                'goal_pos' : goals[0,0],
+            }
+        else:
+            # Contour-map the reachable region
+            im2, contours, hierarchy = cv2.findContours(np.array(-ok, np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            if len(contours) > 0:
+                self.contour = (contours[0] - [self.height/2, 0]) * step
+            else:
+                self.contour = None
+
+            self.valid_points = np.sum(ok)
+            self.valid_indices = np.dstack(np.where(ok)).reshape(self.valid_points, 2)
+            # print(self.valid_indices.shape)
+            # print(self.valid_points)
