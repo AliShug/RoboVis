@@ -15,6 +15,11 @@ class RVView(QGraphicsView):
         self.scale(1, -1)
         self.outlines = []
         self.initScene()
+        self.subscribers = {
+            'mouseEnter' : [],
+            'mouseLeave' : [],
+            'mouseMove' : []
+        }
 
     def initScene(self):
         self.scene.addLine(-50, 0, 600, 0, pen=QPen(Qt.red))
@@ -25,3 +30,18 @@ class RVView(QGraphicsView):
         outline.setGraphicsItem(item)
         self.outlines.append(outline)
         return item
+
+    def subscribe(self, event, function):
+        self.subscribers[event].append(function)
+
+    def enterEvent(self, event):
+        for func in self.subscribers['mouseEnter']:
+            func(event)
+
+    def leaveEvent(self, event):
+        for func in self.subscribers['leaveEvent']:
+            func(event)
+
+    def mouseMoveEvent(self, event):
+        for func in self.subscribers['mouseMove']:
+            func(event)
