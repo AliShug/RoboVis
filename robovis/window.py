@@ -51,7 +51,11 @@ class RVWindow(QWidget):
             self.ghost_outlines.append(more_outline)
 
         # Arm vis
-        self.arm_vis = RVArmVis(self.current_config, self.scene)
+        self.arm_vis = RVArmVis(self.current_config, self.view)
+
+        # Hook up the view mouse events
+        self.view.subscribe('mouseMove', self.arm_vis.handleMouseMove)
+        self.view.subscribe('mouseLeave', lambda e: self.arm_vis.clearGraphics())
 
     def configModified(self):
         '''Call when the configuration has been modified - regenerates the outline(s)'''

@@ -8,22 +8,65 @@ from robovis import RVIK
 
 class RVArmVis(object):
     '''Solves IK for and visualizes a configuration of the robot arm'''
-    def __init__(self, config, scene):
+    def __init__(self, config, view):
         self.goal = np.array([0,0])
         self.config = config
         self.ik = RVIK(config, point=self.goal)
-        self.scene = scene
+        self.view = view
+        self.scene = view.scene
+        self.graphics = []
         self.generateGraphics()
 
     def changeConfig(self, config):
         self.config = config
         self.ik.setConfig(config)
+        self.generateGraphics()
 
     def changeGoal(self, goal):
         self.goal = goal
         self.ik.setPoint(goal)
+        self.generateGraphics()
+
+    def clearGraphics(self):
+        for item in self.graphics:
+            self.scene.removeItem(item)
+        self.graphics = []
 
     def generateGraphics(self):
+        self.clearGraphics()
         res = self.ik.point_results
         if res is not None and res['ok']:
-            self.scene.addLine(QPointF(0,0), QPointF(res['elbow_pos'][0], res['elbow_pos'][1]))
+            origin = QPointF(0,0)
+            elbow = QPointF(res['elbow_pos'][0], res['elbow_pos'][1])
+            upper_actuator = QPointF(res['upper_actuator'][0], res['upper_actuator'][1])
+            end = QPointF(res['goal_pos'][0], res['goal_pos'][1])
+            lower_actuator = QPointF(res['lower_actuator'][0], res['lower_actuator'][1])
+
+            lineDef = QLineF(origin, elbow)
+            elbowLine = self.scene.addLine(lineDef, QPen(Qt.white))
+
+            lineDef = QLineF(upper_actuator, end)
+            forearmLine = self.scene.addLine(lineDef, QPen(Qt.white))
+
+            lineDef = QLineF(origin, lower_actuator)
+            lowerLine = self.scene.addLine(lineDef, QPen(Qt.white))
+
+            lineDef = QLineF(upper_actuator, lower_actuator)
+            linkageLine = self.scene.addLine(lineDef, QPen(Qt.white))
+
+            self.graphics.append(elbowLine)
+            self.graphics.append(forearmLine)
+            self.graphics.append(lowerLine)
+            self.graphics.append(linkageLine)
+
+    # def show(self):
+    #     for item in self.graphics:
+    #         item.show()
+    #
+    # def hide(self):
+    #     for item in self.graphics:
+    #         item.hide()
+
+    def handleMouseMove(self, event):
+        realPoint = self.view.mapToScene(event.pos())
+        self.changeGoal([realPoint.x(), realPoint.y()])

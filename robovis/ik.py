@@ -22,6 +22,7 @@ class RVIK(object):
         '''Sets a goal point to solve for, rather than solving the full range'''
         self.point_mode = True
         self.point = point
+        self.calculate()
 
     def setConfig(self, config):
         '''Set the configuration for the solver, and recalculate the IK solution set'''
@@ -41,7 +42,7 @@ class RVIK(object):
 
         # Generate goals (or just use point mode)
         if self.point_mode:
-            self.goals = np.array([[self.point]])
+            goals = np.array([[self.point]])
             self.width = 1
             self.height = 1
         else:
@@ -53,11 +54,6 @@ class RVIK(object):
             x = np.arange(self.width) * step
             y = (self.height / 2 - np.arange(self.height)) * step
             goals = np.dstack(np.meshgrid(y, x))[:,:,::-1]
-            # goals = np.zeros((self.width,self.height,2))
-            # for j in range(self.height):
-            #     for i in range(self.width):
-            #         goals[i,j]=[i*step, (-j+self.height/2)*step]
-            # print(goals)
 
         dists = np.linalg.norm(goals, axis=2)
 
@@ -155,12 +151,20 @@ class RVIK(object):
         ok = elevator_ok*forearm_ok*actuator_ok*base_ok*forearm_ok*elbow_ok
 
         if self.point_mode:
-            # TODO: In point mode we just want the point's results
+            # In point mode we just package up the point's results
+            # Calculate the actuator vector
+            a = actuator_angles[0,0]
+            lower_actuator = lower_actuator_length * np.array([np.sin(a), np.cos(a)])
+            forearm = forearm_vecs[0,0]
+            upper_actuator = elbows[0,0] - upper_actuator_length * forearm / np.linalg.norm(forearm)
             self.point_results = {
                 'ok' : ok[0,0],
                 'elbow_pos' : elbows[0,0],
                 'goal_pos' : goals[0,0],
+                'lower_actuator' : lower_actuator,
+                'upper_actuator' : upper_actuator,
             }
+            print(self.point_results)
         else:
             # Contour-map the reachable region
             im2, contours, hierarchy = cv2.findContours(np.array(-ok, np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)

@@ -20,6 +20,7 @@ class RVView(QGraphicsView):
             'mouseLeave' : [],
             'mouseMove' : []
         }
+        self.setMouseTracking(True)
 
     def initScene(self):
         self.scene.addLine(-50, 0, 600, 0, pen=QPen(Qt.red))
