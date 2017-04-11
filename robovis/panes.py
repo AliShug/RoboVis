@@ -11,9 +11,9 @@ class RVParamPane(QGroupBox):
         layout = QVBoxLayout()
 
         params = [
-            ('Elevator Length', 1000, 6000, 'elevator_length', self.onChangeElevatorLength, config.elevator_length, 10),
-            ('Forearm Length', 1000, 6000, 'forearm_length', self.onChangeForearmLength, config.forearm_length, 10),
-            ('Rod Ratio', 33, 300, 'rod_ratio', self.onChangeRodRatio, config.getRodRatio(), 100),
+            ('Elevator Length', 1000, 6000, 'elevator_length', self.onChangeElevatorLength, config['elevator_length'], 10),
+            ('Forearm Length', 1000, 6000, 'forearm_length', self.onChangeForearmLength, config['forearm_length'], 10),
+            ('Rod Ratio', 33, 300, 'rod_ratio', self.onChangeRodRatio, config['rod_ratio'], 100),
             ('Elevator Torque', 0, 500, 'elevator_torque', None, 0, 10),
             ('Actuator Torque', 0, 500, 'actuator_torque', None, 0, 10),
         ]
@@ -55,7 +55,7 @@ class RVParamPane(QGroupBox):
         value_box = self.valueboxes['elevator_length']
         adjusted_val = float(slider.value())/10
         value_box.setPlaceholderText(str(adjusted_val))
-        self.window.current_config.setElevator(adjusted_val)
+        self.window.current_config['elevator_length'] = adjusted_val
         self.window.configModified()
 
     def onChangeForearmLength(self):
@@ -63,7 +63,7 @@ class RVParamPane(QGroupBox):
         value_box = self.valueboxes['forearm_length']
         adjusted_val = float(slider.value())/10
         value_box.setPlaceholderText(str(adjusted_val))
-        self.window.current_config.forearm_length = adjusted_val
+        self.window.current_config['forearm_length'] = adjusted_val
         self.window.configModified()
 
     def onChangeRodRatio(self):
@@ -71,5 +71,5 @@ class RVParamPane(QGroupBox):
         value_box = self.valueboxes['rod_ratio']
         adjusted_val = float(slider.value())/100
         value_box.setPlaceholderText(str(adjusted_val))
-        self.window.current_config.setRodRatio(adjusted_val)
+        self.window.current_config['rod_ratio'] = adjusted_val
         self.window.configModified()

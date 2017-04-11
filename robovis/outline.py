@@ -4,17 +4,27 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
+from robovis import RVIK
 
 class RVOutline(object):
-    def __init__(self, ik, color=Qt.white, thickness=1):
-        '''Takes an IK solution object'''
+    def __init__(self, ik = None, config = None, color=Qt.white, thickness=1):
+        '''Takes an configuration object or completed IK object'''
         self.graphicsItem = None
-        self.contour = ik.contour
-        self.width = ik.width
-        self.height = ik.height
-        self.ik = ik
+        if ik:
+            self.ik = ik
+        elif config:
+            self.ik = RVIK(config)
+        else:
+            raise Exception('Must provide an IK object or configuration')
+        self.contour = self.ik.contour
+        self.width = self.ik.width
+        self.height = self.ik.height
         self.color = color
         self.thickness = thickness
+
+    def setColor(self, color):
+        self.graphicsItem.setPen(QPen(color))
+        self.color = color
 
     def setGraphicsItem(self, item):
         self.graphicsItem = item

@@ -33,12 +33,12 @@ class RVIK(object):
     def calculate(self):
         '''Calculates the set of IK solutions, revealing the reachable area'''
         # Config
-        elevator_length = self.config.elevator_length
-        forearm_length = self.config.forearm_length
-        linkage_length = self.config.linkage_length
-        lower_actuator_length = self.config.lower_actuator_length
-        upper_actuator_length = self.config.upper_actuator_length
-        wrist_length = self.config.wrist_length
+        elevator_length = self.config['elevator_length']
+        forearm_length = self.config['forearm_length']
+        linkage_length = self.config['linkage_length']
+        lower_actuator_length = self.config['lower_actuator_length']
+        upper_actuator_length = self.config['upper_actuator_length']
+        wrist_length = self.config['wrist_length']
 
         # Generate goals (or just use point mode)
         if self.point_mode:
@@ -164,7 +164,6 @@ class RVIK(object):
                 'lower_actuator' : lower_actuator,
                 'upper_actuator' : upper_actuator,
             }
-            print(self.point_results)
         else:
             # Contour-map the reachable region
             im2, contours, hierarchy = cv2.findContours(np.array(-ok, np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
