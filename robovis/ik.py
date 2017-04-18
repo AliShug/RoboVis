@@ -162,17 +162,24 @@ class RVIK(object):
                 # say load is 20N
                 l = 20
                 L = np.array([0, -l])
-                x_p = upper_actuator_length
-                x_l = forearm_length
+                x_p = upper_actuator_length/1000
+                x_l = forearm_length/1000
+                x_e = elevator_length/1000
+                x_a = lower_actuator_length/1000
                 theta = forearm_angles[0,0] - np.pi/2
-                # TODO: calculate linkage angle properly
-                alpha = np.pi/2 - (forearm_angles[0,0] - elevator_angles[0,0])
+                linkage = lower_actuator - upper_actuator
+                linkage_dir = linkage/np.linalg.norm(linkage)
+                forearm_dir = forearm/np.linalg.norm(forearm)
+                alpha = np.arccos(linkage_dir.dot(forearm_dir)) - np.pi/2
                 m_p = -(x_l * l * np.cos(theta))/(x_p * np.cos(alpha))
                 P = np.array([np.sin(theta + alpha), np.cos(theta + alpha)]) * m_p
                 F = -(P+L)
-                elevator_torque = F[1] * (elbows[0,0,0]/1000)
-                # TODO: update for non-parallel mechanism
-                actuator_torque = m_p * (upper_actuator_length/1000)
+                elevator = elevator_vecs[0,0]
+                elevator = elevator/np.linalg.norm(elevator)
+                elevator_torque = x_e * (- F[1]*elevator[0] + F[0]*elevator[1])
+                w = -m_p
+                a = lower_actuator/np.linalg.norm(lower_actuator)
+                actuator_torque = x_a*w*(np.cos(theta+alpha)*a[0] - np.sin(theta+alpha)*a[1])
                 print('theta {0:.2f}, alpha {1:.2f}, Te {2:.2f}, Ta {3:.2f}'.format(theta/np.pi, alpha/np.pi, elevator_torque, actuator_torque))
                 self.point_results = {
                     'ok' : True,
