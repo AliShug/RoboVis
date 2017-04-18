@@ -43,21 +43,21 @@ class RVArmVis(object):
             lower_actuator = QPointF(res['lower_actuator'][0], res['lower_actuator'][1])
 
             lineDef = QLineF(origin, elbow)
-            elbowLine = self.scene.addLine(lineDef, QPen(Qt.white))
+            elbow_line = self.scene.addLine(lineDef, QPen(Qt.white))
 
             lineDef = QLineF(upper_actuator, end)
-            forearmLine = self.scene.addLine(lineDef, QPen(Qt.white))
+            forearm_line = self.scene.addLine(lineDef, QPen(Qt.white))
 
             lineDef = QLineF(origin, lower_actuator)
-            lowerLine = self.scene.addLine(lineDef, QPen(Qt.white))
+            lower_line = self.scene.addLine(lineDef, QPen(Qt.white))
 
             lineDef = QLineF(upper_actuator, lower_actuator)
-            linkageLine = self.scene.addLine(lineDef, QPen(Qt.white))
+            linkage_line = self.scene.addLine(lineDef, QPen(Qt.white))
 
-            self.graphics.append(elbowLine)
-            self.graphics.append(forearmLine)
-            self.graphics.append(lowerLine)
-            self.graphics.append(linkageLine)
+            self.graphics.append(elbow_line)
+            self.graphics.append(forearm_line)
+            self.graphics.append(lower_line)
+            self.graphics.append(linkage_line)
 
             # Cordinates readout
             text = self.scene.addText('{0:.2f}, {1:.2f}'.format(end.x(), end.y()))
@@ -65,6 +65,20 @@ class RVArmVis(object):
             text.setPos(end + QPoint(10, -5))
             text.setDefaultTextColor(Qt.white)
             self.graphics.append(text)
+
+            # Forces
+            P = QPointF(res['P'][0], res['P'][1])
+            lineDef = QLineF(upper_actuator, upper_actuator + P)
+            force_P_line = self.scene.addLine(lineDef, QPen(QBrush(Qt.blue), 2))
+            self.graphics.append(force_P_line)
+            F = QPointF(res['F'][0], res['F'][1])
+            lineDef = QLineF(elbow, elbow + F)
+            force_F_line = self.scene.addLine(lineDef, QPen(QBrush(Qt.blue), 2))
+            self.graphics.append(force_F_line)
+            L = QPointF(res['L'][0], res['L'][1])
+            lineDef = QLineF(end, end + L)
+            force_L_line = self.scene.addLine(lineDef, QPen(QBrush(Qt.yellow), 2))
+            self.graphics.append(force_L_line)
 
     # def show(self):
     #     for item in self.graphics:

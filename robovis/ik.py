@@ -157,26 +157,37 @@ class RVIK(object):
             lower_actuator = lower_actuator_length * np.array([np.sin(a), np.cos(a)])
             forearm = forearm_vecs[0,0]
             upper_actuator = elbows[0,0] - upper_actuator_length * forearm / np.linalg.norm(forearm)
-            self.point_results = {
-                'ok' : ok[0,0],
-                'elbow_pos' : elbows[0,0],
-                'goal_pos' : goals[0,0],
-                'lower_actuator' : lower_actuator,
-                'upper_actuator' : upper_actuator,
-            }
-
             if ok[0,0]:
-                # TODO: load calculations
+                # TODO: inverse load calculations
                 # say load is 20N
                 l = 20
+                L = np.array([0, -l])
                 x_p = upper_actuator_length
                 x_l = forearm_length
                 theta = forearm_angles[0,0] - np.pi/2
                 # TODO: calculate linkage angle properly
                 alpha = np.pi/2 - (forearm_angles[0,0] - elevator_angles[0,0])
                 m_p = -(x_l * l * np.cos(theta))/(x_p * np.cos(alpha))
+                P = np.array([np.sin(theta + alpha), np.cos(theta + alpha)]) * m_p
+                F = -(P+L)
+                elevator_torque = F[1] * (elbows[0,0,0]/1000)
+                # TODO: update for non-parallel mechanism
+                actuator_torque = m_p * (upper_actuator_length/1000)
+                print('theta {0:.2f}, alpha {1:.2f}, Te {2:.2f}, Ta {3:.2f}'.format(theta/np.pi, alpha/np.pi, elevator_torque, actuator_torque))
+                self.point_results = {
+                    'ok' : True,
+                    'elbow_pos' : elbows[0,0],
+                    'goal_pos' : goals[0,0],
+                    'lower_actuator' : lower_actuator,
+                    'upper_actuator' : upper_actuator,
+                    'P': P,
+                    'L': L,
+                    'F': F,
 
-                print('theta {0:.2f}, alpha {1:.2f}, m_p {2:.2f}'.format(theta/np.pi, alpha/np.pi, m_p))
+                }
+            else:
+                self.point_results = {'ok': False}
+
         else:
             # Contour-map the reachable region
             im2, contours, hierarchy = cv2.findContours(np.array(-ok, np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
