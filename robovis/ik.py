@@ -164,6 +164,19 @@ class RVIK(object):
                 'lower_actuator' : lower_actuator,
                 'upper_actuator' : upper_actuator,
             }
+
+            if ok[0,0]:
+                # TODO: load calculations
+                # say load is 20N
+                l = 20
+                x_p = upper_actuator_length
+                x_l = forearm_length
+                theta = forearm_angles[0,0] - np.pi/2
+                # TODO: calculate linkage angle properly
+                alpha = np.pi/2 - (forearm_angles[0,0] - elevator_angles[0,0])
+                m_p = -(x_l * l * np.cos(theta))/(x_p * np.cos(alpha))
+
+                print('theta {0:.2f}, alpha {1:.2f}, m_p {2:.2f}'.format(theta/np.pi, alpha/np.pi, m_p))
         else:
             # Contour-map the reachable region
             im2, contours, hierarchy = cv2.findContours(np.array(-ok, np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)

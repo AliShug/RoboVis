@@ -9,6 +9,10 @@ class RVConfig(object):
             self.values['lower_actuator_length'] = other['lower_actuator_length']
             self.values['upper_actuator_length'] = other['upper_actuator_length']
             self.values['wrist_length'] = other['wrist_length']
+            self.values['elevator_weight'] = other['elevator_weight']
+            self.values['forearm_weight'] = other['forearm_weight']
+            self.values['linkage_weight'] = other['linkage_weight']
+            self.values['actuator_weight'] = other['actuator_weight']
         else:
             # General configuration
             self.values['elevator_length'] = 148.4
@@ -17,6 +21,10 @@ class RVConfig(object):
             self.values['lower_actuator_length'] = 65
             self.values['upper_actuator_length'] = 54.4
             self.values['wrist_length'] = 90.52
+            self.values['elevator_weight'] = 5
+            self.values['forearm_weight'] = 5
+            self.values['linkage_weight'] = 5
+            self.values['actuator_weight'] = 3
 
     def setRodRatio(self, ratio):
         self.values['linkage_length'] = ratio * self.values['elevator_length']

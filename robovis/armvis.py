@@ -59,6 +59,13 @@ class RVArmVis(object):
             self.graphics.append(lowerLine)
             self.graphics.append(linkageLine)
 
+            # Cordinates readout
+            text = self.scene.addText('{0:.2f}, {1:.2f}'.format(end.x(), end.y()))
+            text.setTransform(QTransform.fromScale(1,-1))
+            text.setPos(end + QPoint(10, -5))
+            text.setDefaultTextColor(Qt.white)
+            self.graphics.append(text)
+
     # def show(self):
     #     for item in self.graphics:
     #         item.show()
