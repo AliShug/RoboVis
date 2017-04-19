@@ -33,12 +33,12 @@ class RVIK(object):
     def calculate(self):
         '''Calculates the set of IK solutions, revealing the reachable area'''
         # Config
-        elevator_length = self.config['elevator_length']
-        forearm_length = self.config['forearm_length']
-        linkage_length = self.config['linkage_length']
-        lower_actuator_length = self.config['lower_actuator_length']
-        upper_actuator_length = self.config['upper_actuator_length']
-        wrist_length = self.config['wrist_length']
+        elevator_length = self.config['elevator_length'].value
+        forearm_length = self.config['forearm_length'].value
+        linkage_length = self.config['linkage_length'].value
+        lower_actuator_length = self.config['lower_actuator_length'].value
+        upper_actuator_length = self.config['upper_actuator_length'].value
+        wrist_length = self.config['wrist_length'].value
 
         # Generate goals (or just use point mode)
         if self.point_mode:
@@ -162,6 +162,7 @@ class RVIK(object):
                 # say load is 20N
                 l = 20
                 L = np.array([0, -l])
+                # Divide by 1000 to convert units from mm to M
                 x_p = upper_actuator_length/1000
                 x_l = forearm_length/1000
                 x_e = elevator_length/1000
@@ -180,7 +181,7 @@ class RVIK(object):
                 w = -m_p
                 a = lower_actuator/np.linalg.norm(lower_actuator)
                 actuator_torque = x_a*w*(np.cos(theta+alpha)*a[0] - np.sin(theta+alpha)*a[1])
-                print('theta {0:.2f}, alpha {1:.2f}, Te {2:.2f}, Ta {3:.2f}'.format(theta/np.pi, alpha/np.pi, elevator_torque, actuator_torque))
+                # print('theta {0:.2f}, alpha {1:.2f}, Te {2:.2f}, Ta {3:.2f}'.format(theta/np.pi, alpha/np.pi, elevator_torque, actuator_torque))
                 self.point_results = {
                     'ok' : True,
                     'elbow_pos' : elbows[0,0],

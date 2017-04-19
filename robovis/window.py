@@ -16,12 +16,16 @@ class RVWindow(QWidget):
         QWidget.__init__(self)
         layout = QVBoxLayout(self)
 
+        # Core configuration for the arm (the one that gets modified directly)
+        self.current_config = RVConfig()
+        self.current_config.subscribe('changed', self.configModified)
+
         splitter = QSplitter()
         splitter.setChildrenCollapsible(False)
         layout.addWidget(splitter)
 
         # leftFiller = QWidget()
-        paramPane = RVParamPane(self)
+        paramPane = RVParamPane(self, self.current_config)
 
         # Graphics
         self.scene = QGraphicsScene()
@@ -36,7 +40,6 @@ class RVWindow(QWidget):
         self.setLayout(layout)
 
         # Fill in scene
-        self.current_config = RVConfig()
         self.ik = RVIK(self.current_config)
         self.main_outline = RVOutline(color=Qt.white, thickness=3, ik=self.ik)
         item = self.view.addOutline(self.main_outline)
@@ -56,15 +59,15 @@ class RVWindow(QWidget):
             self.scene.removeItem(ghost_info['outline'].graphicsItem)
         self.ghost_outlines = deque()
         # Iterate through offset parameters
-        upper_val = lower_val = self.current_config[param]
+        upper_val = lower_val = self.current_config[param].value
         # 3 each of higher and lower outlines
         for i in range(3):
             config_less = RVConfig(self.current_config)
             config_more = RVConfig(self.current_config)
             upper_val *= offset_increment
             lower_val /= offset_increment
-            config_less.setElevator(lower_val)
-            config_more.setElevator(upper_val)
+            config_less['elevator_length'].value = lower_val
+            config_more['elevator_length'].value = upper_val
             less_outline = RVOutline(config=config_less)
             more_outline = RVOutline(config=config_more)
             self.view.addOutline(less_outline)
@@ -79,10 +82,11 @@ class RVWindow(QWidget):
             }
             self.ghost_outlines.appendleft(less_info)
             self.ghost_outlines.append(more_info)
+        self.updateGhosts()
 
     def updateGhosts(self):
         param = 'elevator_length'
-        current_val = self.current_config[param]
+        current_val = self.current_config[param].value
         # Identify out-of-range outlines
         cleared_low = cleared_high = 0
         for ghost_info in self.ghost_outlines:
@@ -97,7 +101,7 @@ class RVWindow(QWidget):
             # Create new high ghost
             new_val = self.ghost_outlines[-1]['val'] * offset_increment
             new_config = RVConfig(self.current_config)
-            new_config[param] = new_val
+            new_config[param].value = new_val
             new_info = {
                 'outline': RVOutline(config=new_config),
                 'val': new_val,
@@ -110,7 +114,7 @@ class RVWindow(QWidget):
             # Create new low ghost
             new_val = self.ghost_outlines[0]['val'] / offset_increment
             new_config = RVConfig(self.current_config)
-            new_config[param] = new_val
+            new_config[param].value = new_val
             new_info = {
                 'outline': RVOutline(config=new_config),
                 'val': new_val,

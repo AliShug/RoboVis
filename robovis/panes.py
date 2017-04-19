@@ -4,9 +4,67 @@ from PyQt5.QtGui import *
 
 from robovis import *
 
+class RVParameterBox(QGroupBox):
+    def __init__(self, config, parameter):
+        super(RVParameterBox, self).__init__()
+        self.config = config
+        self.parameter = config[parameter]
+        self.param_key = parameter
+        self.config.subscribe('changed', self.configChanged)
+        self.initiated_change = False
+
+        row = QHBoxLayout(self)
+        label = QLabel(self.parameter.label)
+        label.setMinimumWidth(100)
+        row.addWidget(label)
+        self.slider = QSliderF(Qt.Horizontal, divisor=self.parameter.divisor)
+        self.format_str = '{0:.1f}'
+        self.slider.setLimits(self.parameter.min, self.parameter.max)
+        self.slider.setValue(self.parameter.value)
+
+        def sliderChange():
+            self.value_box.setText(self.format_str.format(self.slider.value()))
+            self.parameter.value = self.slider.value()
+            self.initiated_change = True
+            self.config.notifyChange()
+        self.slider.valueChanged.connect(sliderChange)
+        row.addWidget(self.slider)
+
+        self.value_box = QLineEdit()
+        self.value_box.setMaximumWidth(80)
+        self.value_box.setText(self.format_str.format(self.parameter.value))
+        def textChange():
+            try:
+                val = float(self.value_box.text())
+            except:
+                return
+            self.slider.blockSignals(True)
+            self.slider.setValue(val)
+            self.slider.blockSignals(False)
+            self.parameter.value = val
+            self.initiated_change = True
+            self.config.notifyChange()
+        self.value_box.textEdited.connect(textChange)
+        row.addWidget(self.value_box)
+
+        # self.slider.blockSignals(True)
+        # value_box.blockSignals(True)
+        # self.slider.setValue(int(self.parameter[5]*self.parameter[6]))
+        # value_box.setPlaceholderText(str(self.parameter[5]))
+        # self.slider.blockSignals(False)
+        # value_box.blockSignals(False)
+
+    def configChanged(self):
+        '''Update the self.slider and value box from config'''
+        if not self.initiated_change:
+            self.value_box.setText(self.format_str.format(self.parameter.value))
+            self.slider.blockSignals(True)
+            self.slider.setValue(self.parameter.value)
+            self.slider.blockSignals(False)
+
 class RVParamPane(QGroupBox):
-    def __init__(self, window, config=RVConfig()):
-        QGroupBox.__init__(self, 'Parameters')
+    def __init__(self, window, config):
+        super(RVParamPane, self).__init__('Parameters')
         self.window = window
         layout = QVBoxLayout()
 
@@ -18,34 +76,11 @@ class RVParamPane(QGroupBox):
             ('Actuator Torque', 0, 500, 'actuator_torque', None, 0, 10),
         ]
 
-        self.sliders = {}
-        self.valueboxes = {}
-        for p in params:
-            row = QHBoxLayout()
-            layout.addLayout(row)
-            label = QLabel(p[0])
-            label.setMinimumWidth(100)
-            row.addWidget(label)
-            slider = QSlider(Qt.Horizontal)
-            slider.setMinimum(p[1])
-            slider.setMaximum(p[2])
-            # callback
-            if p[4]:
-                slider.valueChanged.connect(p[4])
-            row.addWidget(slider)
-            value_box = QLineEdit()
-            value_box.setMaximumWidth(80)
-            row.addWidget(value_box)
-            self.sliders[p[3]] = slider
-            self.valueboxes[p[3]] = value_box
-
-            slider.blockSignals(True)
-            value_box.blockSignals(True)
-            slider.setValue(int(p[5]*p[6]))
-            value_box.setPlaceholderText(str(p[5]))
-            slider.blockSignals(False)
-            value_box.blockSignals(False)
-            # row.setSizeConstraint(QLayout.SetMaximumSize)
+        layout.addWidget(RVParameterBox(config, 'elevator_length'))
+        layout.addWidget(RVParameterBox(config, 'forearm_length'))
+        layout.addWidget(RVParameterBox(config, 'rod_ratio'))
+        layout.addWidget(RVParameterBox(config, 'elevator_torque'))
+        layout.addWidget(RVParameterBox(config, 'actuator_torque'))
 
         self.setLayout(layout)
         layout.addStretch(5)
