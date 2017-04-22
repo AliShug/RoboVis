@@ -18,6 +18,12 @@ class RVParameterRatio(RVParameter):
             self.config.values['linkage_length'].value = value * self.config.values['elevator_length'].value
         super(RVParameterRatio, self).__setattr__(name, value)
 
+class RVParameterElevator(RVParameter):
+    def __setattr__(self, name, value):
+        if name == 'value' and 'linkage_length' in self.config.values:
+            # Maintain ratio
+            self.config.values['linkage_length'].value = self.config['rod_ratio'].value * value
+        super(RVParameterElevator, self).__setattr__(name, value)
 
 class RVConfig(object):
     def __init__(self, other=None):
@@ -40,9 +46,11 @@ class RVConfig(object):
             self.values['rod_ratio'] = copy.copy(other['rod_ratio'])
             self.values['elevator_torque'] = copy.copy(other['elevator_torque'])
             self.values['actuator_torque'] = copy.copy(other['actuator_torque'])
+            for key, param in self.values.items():
+                param.config = self
         else:
             # General configuration
-            self.values['elevator_length'] = RVParameter(
+            self.values['elevator_length'] = RVParameterElevator(
                 self, 'elevator_length', 148.4,
                 label = 'Elevator Length',
                 min=10, max=1000)
@@ -80,27 +88,16 @@ class RVConfig(object):
                 self, 'actuator_torque', 3,
                 label = 'Actuator Torque')
 
-
-
-    def getRodRatio(self):
         ratio = self.values['linkage_length'].value / self.values['elevator_length'].value
-        if 'rod_ratio' in self.values:
-            self.values['rod_ratio'].value = ratio
-        else:
-            # NOT just a parameter: ratio is a special class which modifies
-            # related parameters
-            self.values['rod_ratio'] = RVParameterRatio(
-                self, 'rod_ratio', ratio,
-                label='Rod Ratio',
-                min=0.6, max=1.4,
-                divisor=100)
-        return self.values['rod_ratio']
+        # Note special RVParameterRatio - not RVParameter
+        self.values['rod_ratio'] = RVParameterRatio(
+            self, 'rod_ratio', ratio,
+            label='Rod Ratio',
+            min=0.6, max=1.4,
+            divisor=100)
 
     def __getitem__(self, key):
-        if key == 'rod_ratio':
-            return self.getRodRatio()
-        else:
-            return self.values[key]
+        return self.values[key]
 
     def __setitem__(self, key, val):
         raise Exception('Config parameters must not be replaced externally')
