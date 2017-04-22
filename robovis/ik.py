@@ -39,6 +39,9 @@ class RVIK(object):
         lower_actuator_length = self.config['lower_actuator_length'].value
         upper_actuator_length = self.config['upper_actuator_length'].value
         wrist_length = self.config['wrist_length'].value
+        actuator_torque = self.config['actuator_torque'].value
+        elevator_torque = self.config['elevator_torque'].value
+        min_load = self.config['min_load'].value
 
         # Generate goals (or just use point mode)
         if self.point_mode:
@@ -105,16 +108,16 @@ class RVIK(object):
         # hacky but it works - divide by zero to clear out-of-range areas
         elevator_servos /= (np.logical_and(elevator_servos > 60, elevator_servos < 210)*1)
 
-        forearm_norms = forearm_vecs/forearm_length
-        vdots = np.inner(forearm_norms, vertical)
-        hdots = np.inner(forearm_norms, horizontal)
+        forearm_dirs = forearm_vecs/forearm_length
+        vdots = np.inner(forearm_dirs, vertical)
+        hdots = np.inner(forearm_dirs, horizontal)
         forearm_angles = np.arccos(vdots) * ((hdots > 0)*2 - 1)
         elevator_ok = (np.logical_and(elevator_servos > 60, elevator_servos < 210)*1)
         forearm_ok = (np.logical_and(forearm_angles > 0, forearm_angles < 180)*1)
 
         # Elevator-forearm angle (elbow angle)
         # Element-wise dot product
-        elbow_angles = np.arccos(np.einsum("ijk, ijk -> ij", elevator_norms, forearm_norms))
+        elbow_angles = np.arccos(np.einsum("ijk, ijk -> ij", elevator_norms, forearm_dirs))
 
         # Base angles are between the elevators and actuators (NOT the forearms!)
         A = linkage_length
@@ -148,7 +151,36 @@ class RVIK(object):
         elbow_ok = (np.degrees(elbow_angles) > 10)*1
 
 
-        ok = elevator_ok*forearm_ok*actuator_ok*base_ok*forearm_ok*elbow_ok
+        # Load calculations
+        # Loads are calculated for the actuator and elevator servos, under the
+        # assumption of a static resting system where the other servo is holding
+        # steady.
+        x_p = upper_actuator_length/1000
+        x_l = forearm_length/1000
+        x_e = elevator_length/1000
+        x_a = lower_actuator_length/1000
+        lower_a_x = np.sin(actuator_angles)
+        lower_a_y = np.cos(actuator_angles)
+        a = np.dstack([lower_a_x, lower_a_y])
+        lower_actuators = a * x_a
+        upper_actuators = elbows/1000 - x_p * forearm_dirs
+        linkage_vecs = lower_actuators - upper_actuators
+        linkage_dirs = linkage_vecs / (linkage_length/1000)
+        # Angles
+        thetas = forearm_angles - np.pi/2
+        cos_alphas = np.einsum("ijk, ijk -> ij", linkage_dirs, forearm_dirs)
+        alphas = np.arccos(cos_alphas) - np.pi/2
+        # w' in calculations
+        w = (x_l * np.cos(thetas)) / (x_p * np.cos(alphas))
+        theta_sums = thetas + alphas
+        actuator_loads = actuator_torque / (x_a * w * (np.cos(theta_sums)*a[:,:,0] - np.sin(theta_sums)*a[:,:,1]))
+        # We don't care about the direction of the load
+        actuator_loads = np.abs(actuator_loads)
+        a_load_ok = actuator_loads > min_load
+
+        ok = elevator_ok*forearm_ok*actuator_ok*base_ok*forearm_ok*elbow_ok*a_load_ok
+        # actuator_loads *= ok
+        # actuator_loads = np.abs(actuator_loads)
 
         if self.point_mode:
             # In point mode we just package up the point's results
@@ -158,9 +190,8 @@ class RVIK(object):
             forearm = forearm_vecs[0,0]
             upper_actuator = elbows[0,0] - upper_actuator_length * forearm / np.linalg.norm(forearm)
             if ok[0,0]:
-                # TODO: inverse load calculations
                 # say load is 20N
-                l = 20
+                l = actuator_loads[0,0]
                 L = np.array([0, -l])
                 # Divide by 1000 to convert units from mm to M
                 x_p = upper_actuator_length/1000
@@ -179,9 +210,11 @@ class RVIK(object):
                 elevator = elevator/np.linalg.norm(elevator)
                 elevator_torque = x_e * (- F[1]*elevator[0] + F[0]*elevator[1])
                 w = -m_p
+
                 a = lower_actuator/np.linalg.norm(lower_actuator)
                 actuator_torque = x_a*w*(np.cos(theta+alpha)*a[0] - np.sin(theta+alpha)*a[1])
-                # print('theta {0:.2f}, alpha {1:.2f}, Te {2:.2f}, Ta {3:.2f}'.format(theta/np.pi, alpha/np.pi, elevator_torque, actuator_torque))
+                print('theta {0:.2f}, alpha {1:.2f}, Te {2:.2f}, Ta {3:.2f}'.format(theta/np.pi, alpha/np.pi, elevator_torque, actuator_torque))
+                # print(np.linalg.norm(linkage))
                 self.point_results = {
                     'ok' : True,
                     'elbow_pos' : elbows[0,0],
@@ -206,5 +239,8 @@ class RVIK(object):
 
             self.valid_points = np.sum(ok)
             self.valid_indices = np.dstack(np.where(ok)).reshape(self.valid_points, 2)
+            self.actuator_loads = actuator_loads
+            # plt.imshow(self.actuator_loads)
+            # plt.show()
             # print(self.valid_indices.shape)
             # print(self.valid_points)

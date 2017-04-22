@@ -5,7 +5,7 @@ from PyQt5.QtGui import *
 from robovis import *
 
 class RVParameterBox(QGroupBox):
-    def __init__(self, config, parameter):
+    def __init__(self, config, parameter, format_str='{0:.1f}'):
         super(RVParameterBox, self).__init__()
         self.config = config
         self.parameter = config[parameter]
@@ -18,7 +18,7 @@ class RVParameterBox(QGroupBox):
         label.setMinimumWidth(100)
         row.addWidget(label)
         self.slider = QSliderF(Qt.Horizontal, divisor=self.parameter.divisor)
-        self.format_str = '{0:.1f}'
+        self.format_str = format_str
         self.slider.setLimits(self.parameter.min, self.parameter.max)
         self.slider.setValue(self.parameter.value)
 
@@ -68,19 +68,12 @@ class RVParamPane(QGroupBox):
         self.window = window
         layout = QVBoxLayout()
 
-        params = [
-            ('Elevator Length', 1000, 6000, 'elevator_length', self.onChangeElevatorLength, config['elevator_length'], 10),
-            ('Forearm Length', 1000, 6000, 'forearm_length', self.onChangeForearmLength, config['forearm_length'], 10),
-            ('Rod Ratio', 33, 300, 'rod_ratio', self.onChangeRodRatio, config['rod_ratio'], 100),
-            ('Elevator Torque', 0, 500, 'elevator_torque', None, 0, 10),
-            ('Actuator Torque', 0, 500, 'actuator_torque', None, 0, 10),
-        ]
-
         layout.addWidget(RVParameterBox(config, 'elevator_length'))
         layout.addWidget(RVParameterBox(config, 'forearm_length'))
-        layout.addWidget(RVParameterBox(config, 'rod_ratio'))
+        layout.addWidget(RVParameterBox(config, 'rod_ratio', '{0:.2f}'))
         layout.addWidget(RVParameterBox(config, 'elevator_torque'))
         layout.addWidget(RVParameterBox(config, 'actuator_torque'))
+        layout.addWidget(RVParameterBox(config, 'min_load'))
 
         self.setLayout(layout)
         layout.addStretch(5)

@@ -43,9 +43,9 @@ class RVConfig(object):
             self.values['forearm_weight'] = copy.copy(other['forearm_weight'])
             self.values['linkage_weight'] = copy.copy(other['linkage_weight'])
             self.values['actuator_weight'] = copy.copy(other['actuator_weight'])
-            self.values['rod_ratio'] = copy.copy(other['rod_ratio'])
             self.values['elevator_torque'] = copy.copy(other['elevator_torque'])
             self.values['actuator_torque'] = copy.copy(other['actuator_torque'])
+            self.values['min_load'] = copy.copy(other['min_load'])
             for key, param in self.values.items():
                 param.config = self
         else:
@@ -82,12 +82,14 @@ class RVConfig(object):
                 self, 'actuator_weight', 3,
                 label = 'Actuator Weight')
             self.values['elevator_torque'] = RVParameter(
-                self, 'elevator_torque', 5,
+                self, 'elevator_torque', 3,
                 label = 'Elevator Torque')
             self.values['actuator_torque'] = RVParameter(
                 self, 'actuator_torque', 3,
                 label = 'Actuator Torque')
-
+            self.values['min_load'] = RVParameter(
+                self, 'min_load', 0,
+                label='Minimum Load')
         ratio = self.values['linkage_length'].value / self.values['elevator_length'].value
         # Note special RVParameterRatio - not RVParameter
         self.values['rod_ratio'] = RVParameterRatio(
