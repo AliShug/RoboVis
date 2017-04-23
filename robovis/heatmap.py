@@ -13,7 +13,7 @@ class RVHeatmap(object):
         self.update(ik)
 
     def update(self, ik):
-        loads = ik.actuator_loads
+        loads = ik.loads
         loads *= 4
         above_255 = loads >= 255
         loads = loads*(~above_255) + 255*np.ones(loads.shape)*above_255

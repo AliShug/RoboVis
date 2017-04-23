@@ -45,7 +45,7 @@ class RVWindow(QWidget):
         self.main_outline = RVOutline(color=Qt.white, thickness=3, ik=self.ik)
         item = self.view.addOutline(self.main_outline)
         self.ghost_outlines = deque()
-        self.generateGhosts()
+        # self.generateGhosts()
 
         # Arm vis
         self.arm_vis = RVArmVis(self.current_config, self.view)
@@ -143,7 +143,7 @@ class RVWindow(QWidget):
         '''Call when the configuration has been modified - regenerates the outline(s)'''
         self.ik.calculate()
         self.main_outline.setContour(self.ik.contour)
-        self.updateGhosts()
+        # self.updateGhosts()
         self.heatmap.update(self.ik)
 
     def sizeHint(self):
