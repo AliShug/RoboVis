@@ -17,7 +17,8 @@ class RVView(QGraphicsView):
         self.subscribers = {
             'mouseEnter' : [],
             'mouseLeave' : [],
-            'mouseMove' : []
+            'mouseMove' : [],
+            'mousePress' : [],
         }
         self.setMouseTracking(True)
 
@@ -38,4 +39,8 @@ class RVView(QGraphicsView):
 
     def mouseMoveEvent(self, event):
         for func in self.subscribers['mouseMove']:
+            func(event)
+
+    def mousePressEvent(self, event):
+        for func in self.subscribers['mousePress']:
             func(event)

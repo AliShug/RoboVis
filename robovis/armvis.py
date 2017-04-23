@@ -8,32 +8,39 @@ from robovis import RVIK
 
 class RVArmVis(object):
     '''Solves IK for and visualizes a configuration of the robot arm'''
-    def __init__(self, config, view):
+    def __init__(self, config, view, **kwargs):
         self.goal = np.array([0,0])
         self.config = config
         self.ik = RVIK(config, point=self.goal)
         self.view = view
+        # Options
+        self.color = kwargs.pop('color', QColor(100, 100, 100))
+        self.thickness = kwargs.pop('thickness', 5)
+        self.show_forces = kwargs.pop('show_forces', True)
+        self.show_coords = kwargs.pop('show_coords', True)
+
         self.scene = view.scene
         self.graphics = []
-        self.generateGraphics()
+        self.update()
 
     def changeConfig(self, config):
         self.config = config
         self.ik.setConfig(config)
-        self.generateGraphics()
+        self.update()
 
     def changeGoal(self, goal):
         self.goal = goal
         self.ik.setPoint(goal)
-        self.generateGraphics()
+        self.update()
 
     def clearGraphics(self):
         for item in self.graphics:
             self.scene.removeItem(item)
         self.graphics = []
 
-    def generateGraphics(self):
+    def update(self):
         self.clearGraphics()
+        self.ik.calculate()
         res = self.ik.point_results
         if res is not None and res['ok']:
             origin = QPointF(0,0)
@@ -42,9 +49,7 @@ class RVArmVis(object):
             end = QPointF(res['goal_pos'][0], res['goal_pos'][1])
             lower_actuator = QPointF(res['lower_actuator'][0], res['lower_actuator'][1])
 
-            thickness = 5
-            color = QColor(100, 100, 100)
-            pen = QPen(color, thickness)
+            pen = QPen(self.color, self.thickness)
 
             lineDef = QLineF(origin, elbow)
             elbow_line = self.scene.addLine(lineDef, pen)
@@ -63,26 +68,26 @@ class RVArmVis(object):
             self.graphics.append(lower_line)
             self.graphics.append(linkage_line)
 
-            # Forces
-            P = QPointF(res['P'][0], res['P'][1])
-            lineDef = QLineF(upper_actuator, upper_actuator + P)
-            force_P_line = self.scene.addLine(lineDef, QPen(QBrush(Qt.blue), 2))
-            self.graphics.append(force_P_line)
-            F = QPointF(res['F'][0], res['F'][1])
-            lineDef = QLineF(elbow, elbow + F)
-            force_F_line = self.scene.addLine(lineDef, QPen(QBrush(Qt.blue), 2))
-            self.graphics.append(force_F_line)
-            L = QPointF(res['L'][0], res['L'][1])
-            lineDef = QLineF(end, end + L)
-            force_L_line = self.scene.addLine(lineDef, QPen(QBrush(Qt.yellow), 2))
-            self.graphics.append(force_L_line)
+            if self.show_forces:
+                P = QPointF(res['P'][0], res['P'][1])
+                lineDef = QLineF(upper_actuator, upper_actuator + P)
+                force_P_line = self.scene.addLine(lineDef, QPen(QBrush(Qt.blue), 2))
+                self.graphics.append(force_P_line)
+                F = QPointF(res['F'][0], res['F'][1])
+                lineDef = QLineF(elbow, elbow + F)
+                force_F_line = self.scene.addLine(lineDef, QPen(QBrush(Qt.blue), 2))
+                self.graphics.append(force_F_line)
+                L = QPointF(res['L'][0], res['L'][1])
+                lineDef = QLineF(end, end + L)
+                force_L_line = self.scene.addLine(lineDef, QPen(QBrush(Qt.yellow), 2))
+                self.graphics.append(force_L_line)
 
-            # Cordinates readout
-            text = self.scene.addText('{0:.2f}, {1:.2f}'.format(end.x(), end.y()))
-            text.setTransform(QTransform.fromScale(1,-1))
-            text.setPos(end + QPoint(10, -5))
-            text.setDefaultTextColor(Qt.white)
-            self.graphics.append(text)
+            if self.show_coords:
+                text = self.scene.addText('{0:.2f}, {1:.2f}'.format(end.x(), end.y()))
+                text.setTransform(QTransform.fromScale(1,-1))
+                text.setPos(end + QPoint(10, -5))
+                text.setDefaultTextColor(Qt.white)
+                self.graphics.append(text)
 
     # def show(self):
     #     for item in self.graphics:

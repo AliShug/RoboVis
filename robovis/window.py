@@ -49,10 +49,22 @@ class RVWindow(QWidget):
 
         # Arm vis
         self.arm_vis = RVArmVis(self.current_config, self.view)
+        self.selected_arm_vis = RVArmVis(self.current_config,
+                                         self.view,
+                                         thickness=2,
+                                         color=QColor(180, 180, 180),
+                                         show_forces=False,
+                                         show_coords=False)
 
         # Hook up the view mouse events
         self.view.subscribe('mouseMove', self.arm_vis.handleMouseMove)
         self.view.subscribe('mouseLeave', lambda e: self.arm_vis.clearGraphics())
+        self.view.subscribe('mousePress', self.viewClick)
+
+    def viewClick(self, event):
+        if event.button() == Qt.LeftButton:
+            pt = self.view.mapToScene(event.pos())
+            self.selected_arm_vis.changeGoal([pt.x(), pt.y()])
 
     def generateGhosts(self):
         param = 'elevator_length'
@@ -144,6 +156,7 @@ class RVWindow(QWidget):
         # self.updateGhosts()
         self.heatmap.update(self.ik)
         self.histogram.update(self.ik)
+        self.selected_arm_vis.update()
 
     def sizeHint(self):
         return QSize(1280, 720)
