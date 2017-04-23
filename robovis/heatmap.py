@@ -8,6 +8,7 @@ from PyQt5.QtGui import *
 from robovis import RVIK
 
 class RVHeatmap(object):
+    '''Heatmap for a load distribution'''
     def __init__(self, scene, ik):
         self.graphicsItem = scene.addPixmap(QPixmap())
         self.update(ik)
@@ -31,3 +32,9 @@ class RVHeatmap(object):
         self.graphicsItem.setRotation(-90)
         self.graphicsItem.setTransform(QTransform.fromScale(ik.scaling_factor, ik.scaling_factor), True)
         self.graphicsItem.setPos(0, ik.scaling_factor * ik.height/2)
+
+    def show(self):
+        self.graphicsItem.show()
+
+    def hide(self):
+        self.graphicsItem.hide()

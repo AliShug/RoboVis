@@ -14,15 +14,14 @@ offset_increment = 1.08
 class RVWindow(QWidget):
     def __init__(self):
         QWidget.__init__(self)
-        layout = QVBoxLayout(self)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0,0,0,0)
+        self.setLayout(layout)
 
         # Core configuration for the arm (the one that gets modified directly)
         self.current_config = RVConfig()
         self.current_config.subscribe('changed', self.configModified)
 
-        splitter = QSplitter()
-        splitter.setChildrenCollapsible(False)
-        layout.addWidget(splitter)
 
         # leftFiller = QWidget()
         paramPane = RVParamPane(self, self.current_config)
@@ -31,20 +30,22 @@ class RVWindow(QWidget):
         self.scene = QGraphicsScene()
         self.view = RVView(self.scene)
 
-        # Fill in layout
-        # splitter.addWidget(leftFiller)
-        splitter.addWidget(self.view)
-        splitter.addWidget(paramPane)
-        splitter.setSizes([2000,1000])
-
-        self.setLayout(layout)
-
         # Fill in scene
         self.ik = RVIK(self.current_config)
+        self.histogram = RVLoadHistogram(self.ik)
         self.heatmap = RVHeatmap(self.scene, self.ik)
         self.main_outline = RVOutline(self.scene, color=Qt.white, thickness=3, ik=self.ik)
         self.ghost_outlines = deque()
         # self.generateGhosts()
+
+        # Fill in layout
+        layout.addWidget(self.view, 1)
+        splitter = QWidget()
+        splitter_layout = QVBoxLayout(splitter)
+        splitter_layout.setContentsMargins(0,0,0,0)
+        layout.addWidget(splitter)
+        splitter_layout.addWidget(paramPane)
+        splitter_layout.addWidget(self.histogram)
 
         # Arm vis
         self.arm_vis = RVArmVis(self.current_config, self.view)

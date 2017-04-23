@@ -3,15 +3,18 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
 class RVLoadHistogram(QGraphicsView):
-    def __init__(self):
+    '''A histogram for the maximum load across the reachable area'''
+    def __init__(self, ik):
         self.scene = QGraphicsScene(0,0,100,60)
         super(RVLoadHistogram, self).__init__(self.scene)
         self.setBackgroundBrush(QBrush(Qt.white))
         self.setRenderHints(QPainter.Antialiasing)
         self.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
         self.setAlignment(Qt.AlignCenter)
-        self.setMinimumSize(100, 60)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.setMinimumHeight(100)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scale(1, -1)
         self.initScene()
         self.subscribers = {
