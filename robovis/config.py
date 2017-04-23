@@ -53,10 +53,11 @@ class RVConfig(object):
             self.values['elevator_length'] = RVParameterElevator(
                 self, 'elevator_length', 148.4,
                 label = 'Elevator Length',
-                min=10, max=1000)
+                min=10, max=2000)
             self.values['forearm_length'] = RVParameter(
                 self, 'forearm_length', 160,
-                label = 'Forearm Length')
+                label = 'Forearm Length',
+                min=10, max=2000)
             self.values['linkage_length'] = RVParameter(
                 self, 'linkage_length', 155,
                 label = 'Linkage Length')

@@ -145,6 +145,7 @@ class RVWindow(QWidget):
         self.main_outline.update(self.ik)
         # self.updateGhosts()
         self.heatmap.update(self.ik)
+        self.histogram.update(self.ik)
 
     def sizeHint(self):
         return QSize(1280, 720)
