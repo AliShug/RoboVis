@@ -32,8 +32,8 @@ class RVWindow(QWidget):
 
         # Fill in scene
         self.ik = RVIK(self.current_config)
-        self.histogram = RVLoadHistogram(self.ik)
         self.heatmap = RVHeatmap(self.scene, self.ik)
+        self.histogram = RVLoadHistogram(self.ik)
         self.main_outline = RVOutline(self.scene, color=Qt.white, thickness=3, ik=self.ik)
         self.ghost_outlines = deque()
         # self.generateGhosts()
@@ -136,8 +136,6 @@ class RVWindow(QWidget):
             else:
                 color = QColor(230, 230, 50).darker(norm_diff*max_dim)
                 outline.setColor(color)
-
-
 
     def configModified(self):
         '''Call when the configuration has been modified - regenerates the outline(s)'''

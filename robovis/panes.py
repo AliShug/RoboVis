@@ -67,6 +67,7 @@ class RVParameterBox(QGroupBox):
             self.slider.blockSignals(True)
             self.slider.setValue(self.parameter.value)
             self.slider.blockSignals(False)
+        self.initiated_change = False
 
 class RVParamPane(QScrollArea):
     def __init__(self, window, config):

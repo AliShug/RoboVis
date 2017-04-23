@@ -29,6 +29,14 @@ class RVIK(object):
         self.config = config
         self.calculate()
 
+    def adjust(self, param, val):
+        '''Perform a partial recalculation with an adjusted parameter'''
+        if param == 'min_load':
+            load_ok = self.loads > val
+            self.reachable = self.partial_ok*load_ok
+        else:
+            raise Exception('Unsupported parameter for IK adjust {0}'.format(param))
+
     # @profile
     def calculate(self):
         '''Calculates the set of IK solutions, revealing the reachable area'''
@@ -192,7 +200,8 @@ class RVIK(object):
         self.loads = loads
 
         load_ok = loads > min_load
-        ok = elevator_ok*forearm_ok*actuator_ok*base_ok*forearm_ok*elbow_ok*load_ok
+        self.partial_ok = elevator_ok*forearm_ok*actuator_ok*base_ok*forearm_ok*elbow_ok
+        ok = self.partial_ok*load_ok
         self.reachable = ok
 
         if self.point_mode:
