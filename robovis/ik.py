@@ -56,6 +56,7 @@ class RVIK(object):
             step = max_dist/self.resolution
             x = np.arange(self.width) * step
             y = (self.height / 2 - np.arange(self.height)) * step
+            self.scaling_factor = step
             goals = np.dstack(np.meshgrid(y, x))[:,:,::-1]
 
         dists = np.linalg.norm(goals, axis=2)

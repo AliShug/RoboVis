@@ -41,6 +41,7 @@ class RVWindow(QWidget):
 
         # Fill in scene
         self.ik = RVIK(self.current_config)
+        self.heatmap = RVHeatmap(self.scene, self.ik)
         self.main_outline = RVOutline(color=Qt.white, thickness=3, ik=self.ik)
         item = self.view.addOutline(self.main_outline)
         self.ghost_outlines = deque()
@@ -143,6 +144,7 @@ class RVWindow(QWidget):
         self.ik.calculate()
         self.main_outline.setContour(self.ik.contour)
         self.updateGhosts()
+        self.heatmap.update(self.ik)
 
     def sizeHint(self):
         return QSize(1280, 720)
