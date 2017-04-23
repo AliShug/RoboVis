@@ -1,3 +1,5 @@
+import numpy as np
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -8,47 +10,53 @@ class QSliderF(QSlider):
         self.divisor = kwargs.pop('divisor', 100)
         super(QSliderF, self).__init__(*args, **kwargs)
 
+    def convertFrom(self, val):
+        return val / self.divisor
+
+    def convertTo(self, val):
+        return val * self.divisor
+
     def setValue(self, val):
-        super(QSliderF, self).setValue(int(val * self.divisor))
+        super(QSliderF, self).setValue(int(self.convertTo(val)))
 
     def setMinimum(self, val):
-        super(QSliderF, self).setMinimum(int(val * self.divisor))
+        super(QSliderF, self).setMinimum(int(self.convertTo(val)))
 
     def setMaximum(self, val):
-        super(QSliderF, self).setMaximum(int(val * self.divisor))
+        super(QSliderF, self).setMaximum(int(self.convertTo(val)))
 
     def setPageStep(self, val):
-        super(QSliderF, self).setPageStep(int(val * self.divisor))
+        super(QSliderF, self).setPageStep(int(self.convertTo(val)))
 
     def setSingleStep(self, val):
-        super(QSliderF, self).setSingleStep(int(val * self.divisor))
+        super(QSliderF, self).setSingleStep(int(self.convertTo(val)))
 
     def setSliderPosition(self, val):
-        super(QSliderF, self).setSliderPosition(int(val * self.divisor))
+        super(QSliderF, self).setSliderPosition(int(self.convertTo(val)))
 
     def setTickInterval(self, val):
-        super(QSliderF, self).setTickInterval(int(val * self.divisor))
+        super(QSliderF, self).setTickInterval(int(self.convertTo(val)))
 
     def value(self):
-        return super(QSliderF, self).value() / self.divisor
+        return self.convertFrom(super(QSliderF, self).value())
 
     def minimum(self):
-        return super(QSliderF, self).minimum() / self.divisor
+        return self.convertFrom(super(QSliderF, self).minimum())
 
     def maximum(self):
-        return super(QSliderF, self).maximum() / self.divisor
+        return self.convertFrom(super(QSliderF, self).maximum())
 
     def pageStep(self):
-        return super(QSliderF, self).pageStep() / self.divisor
+        return self.convertFrom(super(QSliderF, self).pageStep())
 
     def singleStep(self):
-        return super(QSliderF, self).singleStep() / self.divisor
+        return self.convertFrom(super(QSliderF, self).singleStep())
 
     def sliderPosition(self):
-        return super(QSliderF, self).sliderPosition() / self.divisor
+        return self.convertFrom(super(QSliderF, self).sliderPosition())
 
     def tickInterval(self):
-        return super(QSliderF, self).tickInterval() / self.divisor
+        return self.convertFrom(super(QSliderF, self).tickInterval())
 
     def setLimits(self, min, max):
         '''New function, sets min and max in one call'''
@@ -57,3 +65,14 @@ class QSliderF(QSlider):
 
     def wheelEvent(self, e):
         pass
+
+class QSliderLog(QSliderF):
+    def __init__(self, *args, **kwargs):
+        self.scaling = kwargs.pop('scaling', 1)
+        super(QSliderLog, self).__init__(*args, **kwargs)
+
+    def convertTo(self, val):
+        return np.log(val*self.scaling + 1) * self.divisor
+
+    def convertFrom(self, val):
+        return (np.exp(val / self.divisor) - 1) / self.scaling

@@ -83,20 +83,23 @@ class RVConfig(object):
                 label = 'Actuator Weight')
             self.values['elevator_torque'] = RVParameter(
                 self, 'elevator_torque', 3,
-                label = 'Elevator Torque')
+                label = 'Elevator Torque',
+                divisor=100)
             self.values['actuator_torque'] = RVParameter(
                 self, 'actuator_torque', 3,
-                label = 'Actuator Torque')
+                label = 'Actuator Torque',
+                divisor=100)
             self.values['min_load'] = RVParameter(
                 self, 'min_load', 0,
-                label='Minimum Load')
+                label='Minimum Load',
+                divisor=100)
         ratio = self.values['linkage_length'].value / self.values['elevator_length'].value
         # Note special RVParameterRatio - not RVParameter
         self.values['rod_ratio'] = RVParameterRatio(
             self, 'rod_ratio', ratio,
             label='Rod Ratio',
             min=0.6, max=1.4,
-            divisor=100)
+            divisor=1000)
 
     def __getitem__(self, key):
         return self.values[key]
