@@ -42,8 +42,7 @@ class RVWindow(QWidget):
         # Fill in scene
         self.ik = RVIK(self.current_config)
         self.heatmap = RVHeatmap(self.scene, self.ik)
-        self.main_outline = RVOutline(color=Qt.white, thickness=3, ik=self.ik)
-        item = self.view.addOutline(self.main_outline)
+        self.main_outline = RVOutline(self.scene, color=Qt.white, thickness=3, ik=self.ik)
         self.ghost_outlines = deque()
         # self.generateGhosts()
 
@@ -69,8 +68,8 @@ class RVWindow(QWidget):
             lower_val /= offset_increment
             config_less['elevator_length'].value = lower_val
             config_more['elevator_length'].value = upper_val
-            less_outline = RVOutline(config=config_less)
-            more_outline = RVOutline(config=config_more)
+            less_outline = RVOutline(self.scene, config=config_less)
+            more_outline = RVOutline(self.scene, config=config_more)
             self.view.addOutline(less_outline)
             self.view.addOutline(more_outline)
             less_info = {
@@ -104,7 +103,7 @@ class RVWindow(QWidget):
             new_config = RVConfig(self.current_config)
             new_config[param].value = new_val
             new_info = {
-                'outline': RVOutline(config=new_config),
+                'outline': RVOutline(self.scene, config=new_config),
                 'val': new_val,
             }
             self.ghost_outlines.append(new_info)
@@ -117,7 +116,7 @@ class RVWindow(QWidget):
             new_config = RVConfig(self.current_config)
             new_config[param].value = new_val
             new_info = {
-                'outline': RVOutline(config=new_config),
+                'outline': RVOutline(self.scene, config=new_config),
                 'val': new_val,
             }
             self.ghost_outlines.appendleft(new_info)
@@ -142,7 +141,7 @@ class RVWindow(QWidget):
     def configModified(self):
         '''Call when the configuration has been modified - regenerates the outline(s)'''
         self.ik.calculate()
-        self.main_outline.setContour(self.ik.contour)
+        self.main_outline.update(self.ik)
         # self.updateGhosts()
         self.heatmap.update(self.ik)
 

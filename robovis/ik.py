@@ -243,7 +243,9 @@ class RVIK(object):
             # Contour-map the reachable region
             im2, contours, hierarchy = cv2.findContours(np.array(-ok, np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             if len(contours) > 0:
-                self.contour = (contours[0] - [self.height/2, 0]) * step
+                self.contours = []
+                for contour in contours:
+                    self.contours.append((contour - [self.height/2, 0]) * step)
             else:
                 self.contour = None
 

@@ -18,10 +18,13 @@ class RVHeatmap(object):
         above_255 = loads >= 255
         loads = loads*(~above_255) + 255*np.ones(loads.shape)*above_255
         loads = loads.astype(np.uint8)
-        loads = np.dstack([loads, loads, loads])
-        loads = cv2.applyColorMap(loads, cv2.COLORMAP_WINTER)
+        alpha = ik.reachable * 255
+        alpha = alpha.astype(np.uint8)
+        loads_rgb = np.dstack([loads, loads, loads])
+        loads_rgb = cv2.applyColorMap(loads_rgb, cv2.COLORMAP_HOT)
+        loads = np.dstack([loads_rgb, alpha])
         # cv2.imshow('colormap', loads)
-        image = QImage(loads.data, loads.shape[1], loads.shape[0], loads.shape[1]*3, QImage.Format_RGB888).rgbSwapped()
+        image = QImage(loads.data, loads.shape[1], loads.shape[0], loads.shape[1]*4, QImage.Format_ARGB32)
         pixmap = QPixmap(image)
         self.graphicsItem.setPixmap(pixmap)
         self.graphicsItem.resetTransform()
