@@ -32,6 +32,7 @@ class RVLoadHistogram(QGraphicsView):
         self.lines = []
         self.hist = []
         self.edges = []
+        self.config = ik.config
         self.update(ik)
 
         self.setMouseTracking(True)
@@ -39,7 +40,6 @@ class RVLoadHistogram(QGraphicsView):
     def update(self, ik=None):
         if ik is not None:
             self.ik = ik
-            self.config = ik.config
             self.min_load = self.config['min_load'].value
 
         for line in self.lines:

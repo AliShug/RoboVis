@@ -1,4 +1,7 @@
 from collections import deque
+from multiprocessing import Pool
+import os
+from time import sleep
 
 import numpy as np
 
@@ -11,9 +14,13 @@ from robovis import RVArmVis
 
 offset_increment = 1.08
 
+def runIK(config, timestamp):
+    return (RVIK(config), timestamp)
+
 class RVWindow(QWidget):
     def __init__(self):
         QWidget.__init__(self)
+        self._active = True
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0,0,0,0)
         self.setLayout(layout)
@@ -60,6 +67,12 @@ class RVWindow(QWidget):
         self.view.subscribe('mouseMove', self.arm_vis.handleMouseMove)
         self.view.subscribe('mouseLeave', lambda e: self.arm_vis.clearGraphics())
         self.view.subscribe('mousePress', self.viewClick)
+
+        self.async_results = []
+        self.latest_result = 0
+        self.result_index = 0
+        self.createIKPool()
+        QTimer.singleShot(0, self.asyncPoll)
 
     def viewClick(self, event):
         if event.button() == Qt.LeftButton:
@@ -151,12 +164,41 @@ class RVWindow(QWidget):
 
     def configModified(self):
         '''Call when the configuration has been modified - regenerates the outline(s)'''
-        self.ik.calculate()
-        self.main_outline.update(self.ik)
+        # self.selected_arm_vis.update()
         # self.updateGhosts()
-        self.heatmap.update(self.ik)
-        self.histogram.update(self.ik)
+        copyConfig = RVConfig(self.current_config)
+        self.result_index += 1
+        res = self.ik_pool.apply_async(runIK, [copyConfig, self.result_index])
+        self.async_results.append(res)
+    
+    def createIKPool(self):
+        # 'None' yields automatic sizing (enough to use all available cores)
+        self.ik_pool = Pool(None)
+
+    def asyncPoll(self):
+        while self._active:
+            sleep(0.01)
+            # See if any results have finished, apply if needed
+            for res in self.async_results:
+                if res.ready():
+                    ik, stamp = res.get()
+                    if stamp > self.latest_result:
+                        self.latest_result = stamp
+                        self.ikComplete(ik)
+                    self.async_results.remove(res)
+                    break
+            qApp.processEvents()
+
+    def ikComplete(self, ik):
+        self.main_outline.update(ik)
+        self.heatmap.update(ik)
+        self.histogram.update(ik)
         self.selected_arm_vis.update()
 
     def sizeHint(self):
         return QSize(1280, 720)
+
+    def closeEvent(self, event):
+        # Smash up our async workers
+        self.ik_pool.terminate()
+        self._active = False
