@@ -36,10 +36,15 @@ class RVWindow(QWidget):
 
         # Fill in scene
         self.ik = RVIK(self.current_config)
+        self.createOutlines()
         self.heatmap = RVHeatmap(self.scene, self.ik)
         self.histogram = RVLoadHistogram(self.ik)
         self.ghost_outlines = deque()
-        self.createOutlines()
+        self.main_outline = RVOutline(
+            self.scene,
+            color=Qt.white,
+            thickness=3)
+        self.main_outline.update(self.ik)
         # self.generateGhosts()
 
         self.show_heatmap = True
@@ -117,72 +122,98 @@ class RVWindow(QWidget):
         self.updateGhosts()
 
     def updateGhosts(self):
-        param = 'elevator_length'
-        current_val = self.current_config[param].value
-        # Identify out-of-range outlines
+        p = 'elevator_length'
+        q = self.solvers[p]
+        current_val = self.current_config[p].value
+        modified = False
+        # Identify out-of-range solvers
         cleared_low = cleared_high = 0
-        for ghost_info in self.ghost_outlines:
-            if ghost_info['val'] < current_val / offset_increment**3:
+        for solver in q:
+            if solver.data['val'] < current_val / offset_increment**4:
                 cleared_low += 1
-            elif ghost_info['val'] > current_val * offset_increment**3:
+                modified = True
+            elif solver.data['val'] > current_val * offset_increment**4:
                 cleared_high += 1
-        # Clear and replace the out-of-range outlines
+                modified = True
+        # Flip out-of-range solvers to other side
         for i in range(cleared_low):
-            ghost_info = self.ghost_outlines.popleft()
-            self.scene.removeItem(ghost_info['outline'].graphicsItem)
-            # Create new high ghost
-            new_val = self.ghost_outlines[-1]['val'] * offset_increment
+            top = q[-1]
+            solver = q.popleft()
+            q.append(solver)
+            # Begin solving
             new_config = RVConfig(self.current_config)
-            new_config[param].value = new_val
-            new_info = {
-                'outline': RVOutline(self.scene, config=new_config),
-                'val': new_val,
-            }
-            self.ghost_outlines.append(new_info)
-            self.view.addOutline(new_info['outline'])
+            new_val = top.data['val'] * offset_increment
+            new_config[p].value = new_val
+            solver.data['val'] = new_val
+            solver.solveAsync(new_config)
         for i in range(cleared_high):
-            ghost_info = self.ghost_outlines.pop()
-            self.scene.removeItem(ghost_info['outline'].graphicsItem)
-            # Create new low ghost
-            new_val = self.ghost_outlines[0]['val'] / offset_increment
+            bottom = q[0]
+            solver = q.pop()
+            q.appendleft(solver)
+            # Begin solving
             new_config = RVConfig(self.current_config)
-            new_config[param].value = new_val
-            new_info = {
-                'outline': RVOutline(self.scene, config=new_config),
-                'val': new_val,
-            }
-            self.ghost_outlines.appendleft(new_info)
-            self.view.addOutline(new_info['outline'])
-        # Update the outline colors
-        for ghost_info in self.ghost_outlines:
-            outline = ghost_info['outline']
-            val = ghost_info['val']
-            diff = val - current_val
-            norm_diff = abs(diff) / abs(current_val*offset_increment**3 - current_val)
-            max_dim = 800
-            norm_diff = max(norm_diff, 100/max_dim)
-            if diff < 0:
-                color = QColor(50, 50, 255).darker(norm_diff*max_dim)
-                outline.setColor(color)
-            else:
-                color = QColor(230, 230, 50).darker(norm_diff*max_dim)
-                outline.setColor(color)
+            new_val = bottom.data['val'] / offset_increment
+            new_config[p].value = new_val
+            solver.data['val'] = new_val
+            solver.solveAsync(new_config)
+        # Resolve any changes
+        if modified:
+            # Update outlines
+            self.latchOutlines()
+            # Update colors
+            # TODO
+
+
+        #     ghost_info = self.ghost_outlines.popleft()
+        #     self.scene.removeItem(ghost_info['outline'].graphicsItem)
+        #     # Create new high ghost
+        #     new_val = self.ghost_outlines[-1]['val'] * offset_increment
+        #     new_config = RVConfig(self.current_config)
+        #     new_config[param].value = new_val
+        #     new_info = {
+        #         'outline': RVOutline(self.scene, config=new_config),
+        #         'val': new_val,
+        #     }
+        #     self.ghost_outlines.append(new_info)
+        #     self.view.addOutline(new_info['outline'])
+        # for i in range(cleared_high):
+        #     ghost_info = self.ghost_outlines.pop()
+        #     self.scene.removeItem(ghost_info['outline'].graphicsItem)
+        #     # Create new low ghost
+        #     new_val = self.ghost_outlines[0]['val'] / offset_increment
+        #     new_config = RVConfig(self.current_config)
+        #     new_config[param].value = new_val
+        #     new_info = {
+        #         'outline': RVOutline(self.scene, config=new_config),
+        #         'val': new_val,
+        #     }
+        #     self.ghost_outlines.appendleft(new_info)
+        #     self.view.addOutline(new_info['outline'])
+        # # Update the outline colors
+        # for ghost_info in self.ghost_outlines:
+        #     outline = ghost_info['outline']
+        #     val = ghost_info['val']
+        #     diff = val - current_val
+        #     norm_diff = abs(diff) / abs(current_val*offset_increment**3 - current_val)
+        #     max_dim = 800
+        #     norm_diff = max(norm_diff, 100/max_dim)
+        #     if diff < 0:
+        #         color = QColor(50, 50, 255).darker(norm_diff*max_dim)
+        #         outline.setColor(color)
+        #     else:
+        #         color = QColor(230, 230, 50).darker(norm_diff*max_dim)
+        #         outline.setColor(color)
 
     def configModified(self):
         '''Call when the configuration has been modified - regenerates the outline(s)'''
         # self.selected_arm_vis.update()
-        # self.updateGhosts()
         self.solvers['main'][0].solveAsync(self.current_config)
+        self.updateGhosts()
 
     def createOutlines(self):
         self.outlines = deque()
         for i in range(6):
             self.outlines.append(RVOutline(self.scene))
-        self.main_outline = RVOutline(
-            self.scene,
-            color=Qt.white,
-            thickness=3)
-        self.main_outline.update(self.ik)
 
     def createIKPool(self):
         # 'None' yields automatic sizing (enough to use all available cores)
@@ -212,22 +243,25 @@ class RVWindow(QWidget):
             lower_val /= offset_increment
             config_less[p].value = lower_val
             config_more[p].value = upper_val
-            q[3-i].solveAsync(config_less)
-            q[4+i].solveAsync(config_more)
-
+            lower_solver = q[3-i]
+            upper_solver = q[4+i]
+            lower_solver.solveAsync(config_less)
+            upper_solver.solveAsync(config_more)
+            lower_solver.data['val'] = lower_val
+            upper_solver.data['val'] = upper_val
 
     def latchOutlines(self):
         '''Latches outlines from outline pool to solvers for current param'''
         for outline in self.outlines:
             if outline.solver:
-                outline.solver.removeOutline(outline)
+                outline.solver.removeOutline()
         p = 'elevator_length'
         q = self.solvers[p]
         for i in range(3):
             outline_l = self.outlines[i]
-            outline_r = self.outlines[i*2]
-            q[ i + 1].setOutline(outline_l)
-            q[-i - 2].setOutline(outline_r)
+            outline_r = self.outlines[3 + i]
+            q[3 - i].setOutline(outline_l)
+            q[4 + i].setOutline(outline_r)
 
     def asyncPoll(self):
         while self._active:

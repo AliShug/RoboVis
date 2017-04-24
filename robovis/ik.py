@@ -18,6 +18,7 @@ class RVSolver(object):
         self.ready = False
         self.res = None
         self.pool = pool
+        self.data = {}
         if config:
             self.solveAsync(config)
 
