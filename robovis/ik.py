@@ -22,12 +22,21 @@ class RVSolver(object):
         if config:
             self.solveAsync(config)
 
-    def solveAsync(self, config):
+    def solveAsync(self, config, priority=1):
         self.ready = False
         copyConfig = RVConfig(config)
         self.start_stamp += 1
-        self.res = self.pool.registerJob(runIK, [copyConfig, self.start_stamp])
-        # print('SOLVING')
+        self.res = self.pool.registerJob(runIK,
+                                         [copyConfig, self.start_stamp],
+                                         self, priority)
+
+    def solveLocal(self, config):
+        self.ik = RVIK(config)
+        # Notify anyone that cares
+        if self.outline:
+            self.outline.update(self.ik)
+        for func in self.subscribers['ready']:
+            func(self.ik)
 
     def subscribe(self, event, func):
         self.subscribers[event].append(func)
@@ -60,7 +69,6 @@ class RVSolver(object):
                 for func in self.subscribers['ready']:
                     func(self.ik)
                 self.ready = True
-                print('Solver DONE')
 
 
 class RVIK(object):

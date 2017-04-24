@@ -159,7 +159,7 @@ class RVWindow(QWidget):
     def configModified(self):
         '''Call when the configuration has been modified - regenerates the outline(s)'''
         # self.selected_arm_vis.update()
-        self.solvers['main'][0].solveAsync(self.current_config)
+        self.solvers['main'][0].solveLocal(self.current_config)
         self.updateGhosts()
         self.solvePerpendicular()
 
