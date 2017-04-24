@@ -1,4 +1,5 @@
 # Note: import order matters here! Main window must come after dependencies
+from .workerpool import RVWorkerPool
 from .config import RVConfig
 from .ik import RVIK, RVSolver
 from .uiext import *

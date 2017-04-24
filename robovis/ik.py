@@ -26,7 +26,7 @@ class RVSolver(object):
         self.ready = False
         copyConfig = RVConfig(config)
         self.start_stamp += 1
-        self.res = self.pool.apply_async(runIK, [copyConfig, self.start_stamp])
+        self.res = self.pool.registerJob(runIK, [copyConfig, self.start_stamp])
         # print('SOLVING')
 
     def subscribe(self, event, func):

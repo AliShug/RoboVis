@@ -170,7 +170,7 @@ class RVWindow(QWidget):
 
     def createIKPool(self):
         # 'None' yields automatic sizing (enough to use all available cores)
-        self.ik_pool = Pool(None)
+        self.ik_pool = RVWorkerPool(None)
 
         self.solvers = {}
         params = [
@@ -241,6 +241,7 @@ class RVWindow(QWidget):
     def asyncPoll(self):
         while self._active:
             sleep(0.01)
+            self.ik_pool.poll()
             # See if any solvers have finished, results are automatically
             # cascaded out
             for p, set in self.solvers.items():
