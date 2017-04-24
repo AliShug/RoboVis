@@ -120,3 +120,10 @@ class RVConfig(object):
     def onChanged(self):
         for func in self.subscriptions['changed']:
             func()
+
+    def getRaw(self):
+        '''Returns a simple dictionary representation of the configuration'''
+        raw = {}
+        for key, param in self.values.items():
+            raw[key] = param.value
+        return raw

@@ -4,6 +4,7 @@ import os
 from time import sleep
 
 import numpy as np
+import yaml
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -15,13 +16,15 @@ from robovis import RVArmVis
 offset_increment = 1.08
 start_param = 'elevator_length'
 
-class RVWindow(QWidget):
+class RVWindow(QMainWindow):
     def __init__(self):
         QWidget.__init__(self)
         self._active = True
-        layout = QHBoxLayout(self)
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QHBoxLayout(central_widget)
         layout.setContentsMargins(0,0,0,0)
-        self.setLayout(layout)
+        self.initMenu()
 
         # Core configuration for the arm (the one that gets modified directly)
         self.current_config = RVConfig()
@@ -90,6 +93,44 @@ class RVWindow(QWidget):
         if event.button() == Qt.LeftButton:
             pt = self.view.mapToScene(event.pos())
             self.selected_arm_vis.changeGoal([pt.x(), pt.y()])
+
+    def initMenu(self):
+        exitAction = QAction('&Exit', self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.setStatusTip('Exit RoboVis')
+        exitAction.triggered.connect(self.close)
+
+        loadAction = QAction('&Load Config', self)
+        loadAction.setShortcut('Ctrl+O')
+        loadAction.setStatusTip('Load an existing configuration file')
+        # loadAction.triggered.connect()
+
+        saveAction = QAction('&Save Config', self)
+        saveAction.setShortcut('Ctrl+S')
+        saveAction.setStatusTip('Save the current configuration to a file')
+        saveAction.triggered.connect(self.saveConfig)
+
+        self.statusBar()
+
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu('&File')
+        fileMenu.addAction(loadAction)
+        fileMenu.addAction(saveAction)
+        fileMenu.addAction(exitAction)
+
+        self.setWindowTitle('RoboVis')
+
+    def saveConfig(self):
+        '''Saves the current configuration using a system file dialog'''
+        path = QFileDialog.getSaveFileName(self, 'Open file',
+         '',"YAML files (*.yml *.yaml)")[0]
+        if path != '':
+            with open(path, 'w') as file:
+                data = yaml.dump(
+                    self.current_config.getRaw(),
+                    default_flow_style=False,
+                    explicit_start=True)
+                file.write(data)
 
     def updateGhosts(self):
         p = self.current_param
