@@ -103,7 +103,7 @@ class RVWindow(QMainWindow):
         loadAction = QAction('&Load Config', self)
         loadAction.setShortcut('Ctrl+O')
         loadAction.setStatusTip('Load an existing configuration file')
-        # loadAction.triggered.connect()
+        loadAction.triggered.connect(self.loadConfig)
 
         saveAction = QAction('&Save Config', self)
         saveAction.setShortcut('Ctrl+S')
@@ -122,8 +122,8 @@ class RVWindow(QMainWindow):
 
     def saveConfig(self):
         '''Saves the current configuration using a system file dialog'''
-        path = QFileDialog.getSaveFileName(self, 'Open file',
-         '',"YAML files (*.yml *.yaml)")[0]
+        path = QFileDialog.getSaveFileName(self, 'Save file',
+                                           '',"YAML files (*.yml *.yaml)")[0]
         if path != '':
             with open(path, 'w') as file:
                 data = yaml.dump(
@@ -131,6 +131,18 @@ class RVWindow(QMainWindow):
                     default_flow_style=False,
                     explicit_start=True)
                 file.write(data)
+                print('Saved config to {0}'.format(path))
+
+    def loadConfig(self):
+        '''Loads a configuration using a system file dialog'''
+        path = QFileDialog.getOpenFileName(self, 'Open file',
+                                           '', 'YAML files (*.yml *.yaml)')[0]
+        if path != '':
+            with open(path, 'r') as file:
+                raw = yaml.load(file.read())
+                self.current_config.loadRaw(raw)
+                print('Loaded config from {0}'.format(path))
+
 
     def updateGhosts(self):
         p = self.current_param

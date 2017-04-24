@@ -127,3 +127,9 @@ class RVConfig(object):
         for key, param in self.values.items():
             raw[key] = param.value
         return raw
+
+    def loadRaw(self, raw):
+        '''Fills in the config from a dictionary representation'''
+        for param, val in raw.items():
+            self.values[param].value = val
+        self.notifyChange()
