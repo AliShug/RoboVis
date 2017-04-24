@@ -9,7 +9,9 @@ from robovis import RVIK
 class RVArmVis(object):
     '''Solves IK for and visualizes a configuration of the robot arm'''
     def __init__(self, config, view, **kwargs):
+        self.displayed = False
         self.goal = np.array([0,0])
+        self.res = None
         self.config = config
         self.ik = RVIK(config, point=self.goal)
         self.view = view
@@ -18,6 +20,10 @@ class RVArmVis(object):
         self.thickness = kwargs.pop('thickness', 5)
         self.show_forces = kwargs.pop('show_forces', True)
         self.show_coords = kwargs.pop('show_coords', True)
+
+        self.subscribers = {
+            'changed': []
+        }
 
         self.scene = view.scene
         self.graphics = []
@@ -43,6 +49,8 @@ class RVArmVis(object):
         self.ik.calculate()
         res = self.ik.point_results
         if res is not None and res['ok']:
+            self.res = res
+            self.displayed = True
             origin = QPointF(0,0)
             elbow = QPointF(res['elbow_pos'][0], res['elbow_pos'][1])
             upper_actuator = QPointF(res['upper_actuator'][0], res['upper_actuator'][1])
@@ -83,11 +91,24 @@ class RVArmVis(object):
                 self.graphics.append(force_L_line)
 
             if self.show_coords:
-                text = self.scene.addText('{0:.2f}, {1:.2f}'.format(end.x(), end.y()))
+                rect = QRectF(end + QPointF(10, -5), end + QPointF(120, -40))
+                box = self.scene.addRect(rect, brush=QBrush(Qt.black))
+                box.setOpacity(0.5)
+                self.graphics.append(box)
+                text = self.scene.addText('{0:.2f}, {1:.2f} mm'.format(end.x(), end.y()))
                 text.setTransform(QTransform.fromScale(1,-1))
                 text.setPos(end + QPoint(10, -5))
                 text.setDefaultTextColor(Qt.white)
                 self.graphics.append(text)
+                text = self.scene.addText('{0:.2f} N'.format(res['load']))
+                text.setTransform(QTransform.fromScale(1,-1))
+                text.setPos(end + QPoint(10, -20))
+                text.setDefaultTextColor(Qt.white)
+                self.graphics.append(text)
+        else:
+            self.displayed = False
+            self.res = None
+        self.onChanged()
 
     # def show(self):
     #     for item in self.graphics:
@@ -100,3 +121,10 @@ class RVArmVis(object):
     def handleMouseMove(self, event):
         realPoint = self.view.mapToScene(event.pos())
         self.changeGoal([realPoint.x(), realPoint.y()])
+
+    def subscribe(self, event, func):
+        self.subscribers[event].append(func)
+
+    def onChanged(self):
+        for func in self.subscribers['changed']:
+            func()

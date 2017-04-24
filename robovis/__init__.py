@@ -6,7 +6,7 @@ from .uiext import *
 from .outline import RVOutline
 from .heatmap import RVHeatmap
 from .load_histogram import RVLoadHistogram
-from .panes import RVParamPane
 from .view import RVView
 from .armvis import RVArmVis
+from .panes import RVParamPane, RVSelectionPane
 from .window import RVWindow

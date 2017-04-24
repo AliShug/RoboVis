@@ -76,7 +76,6 @@ class RVParameterBox(QGroupBox):
         self.subscribers[event].append(func)
 
     def enterEvent(self, event):
-        print('hello from ', self.param_key)
         for func in self.subscribers['mouseEnter']:
             func(event)
 
@@ -131,3 +130,38 @@ class RVParamPane(QScrollArea):
         value_box.setPlaceholderText(str(adjusted_val))
         self.window.current_config['rod_ratio'] = adjusted_val
         self.window.configModified()
+
+
+class RVSelectionPane(QWidget):
+    def __init__(self, selected_arm_vis, hover_arm_vis):
+        super(RVSelectionPane, self).__init__()
+        self.setFixedWidth(160)
+
+        self.selected = selected_arm_vis
+        self.hover = hover_arm_vis
+        self.selected.subscribe('changed', self.update)
+        self.hover.subscribe('changed', self.update)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel('Selection'))
+        self.selected_label = QLabel('--')
+        layout.addWidget(self.selected_label)
+        layout.addWidget(QLabel('Hover'))
+        self.hover_label = QLabel('--')
+        layout.addWidget(self.hover_label)
+
+        layout.addStretch(1)
+
+    def textFor(self, arm):
+        s = 'Pos: {0} mm\nLoad: {1:.2f} N'.format(arm.goal, arm.res['load'])
+        return s
+
+    def update(self):
+        if self.hover.displayed:
+            self.hover_label.setText(self.textFor(self.hover))
+        else:
+            self.hover_label.setText('--')
+        if self.selected.displayed:
+            self.selected_label.setText(self.textFor(self.selected))
+        else:
+            self.selected_label.setText('--')

@@ -58,7 +58,19 @@ class RVWindow(QMainWindow):
             else:
                 self.heatmap.hide()
 
+
+        # Arm vis
+        self.arm_vis = RVArmVis(self.current_config, self.view)
+        self.selected_arm_vis = RVArmVis(self.current_config,
+                                         self.view,
+                                         thickness=2,
+                                         color=QColor(180, 180, 180),
+                                         show_forces=False,
+                                         show_coords=False)
+
         # Fill in layout
+        self.selection_pane = RVSelectionPane(self.selected_arm_vis, self.arm_vis)
+        layout.addWidget(self.selection_pane)
         layout.addWidget(self.view, 1)
         splitter = QWidget()
         splitter_layout = QVBoxLayout(splitter)
@@ -69,15 +81,6 @@ class RVWindow(QMainWindow):
         splitter_layout.addWidget(heatmap_button)
         splitter_layout.addWidget(paramPane)
         splitter_layout.addWidget(self.histogram)
-
-        # Arm vis
-        self.arm_vis = RVArmVis(self.current_config, self.view)
-        self.selected_arm_vis = RVArmVis(self.current_config,
-                                         self.view,
-                                         thickness=2,
-                                         color=QColor(180, 180, 180),
-                                         show_forces=False,
-                                         show_coords=False)
 
         # Hook up the view mouse events
         self.view.subscribe('mouseMove', self.arm_vis.handleMouseMove)
@@ -201,7 +204,6 @@ class RVWindow(QMainWindow):
                 outline.setColor(color)
 
     def setCurrentParam(self, param):
-        print('Setting ', param)
         if param not in self.solvers.keys():
             print('Warning: param ', param, ' not currently solved for')
         else:

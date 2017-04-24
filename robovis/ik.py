@@ -311,7 +311,7 @@ class RVIK(object):
                     'P': P,
                     'L': L,
                     'F': F,
-
+                    'load': loads[0,0],
                 }
             else:
                 self.point_results = {'ok': False}
