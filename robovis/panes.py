@@ -6,6 +6,9 @@ from robovis import *
 
 class RVParameterBox(QGroupBox):
     def __init__(self, config, parameter, format_str='{0:.2f}', log=False, log_scaling=1):
+        self.subscribers = {
+            'mouseEnter': []
+        }
         self.config = config
         self.parameter = config[parameter]
         self.param_key = parameter
@@ -69,6 +72,14 @@ class RVParameterBox(QGroupBox):
             self.slider.blockSignals(False)
         self.initiated_change = False
 
+    def subscribe(self, event, func):
+        self.subscribers[event].append(func)
+
+    def enterEvent(self, event):
+        print('hello from ', self.param_key)
+        for func in self.subscribers['mouseEnter']:
+            func(event)
+
 class RVParamPane(QScrollArea):
     def __init__(self, window, config):
         super(RVParamPane, self).__init__()
@@ -83,12 +94,19 @@ class RVParamPane(QScrollArea):
         self.myWidget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
         layout.addStretch(1)
 
-        layout.addWidget(RVParameterBox(config, 'min_load', log=True, log_scaling=0.5))
-        layout.addWidget(RVParameterBox(config, 'actuator_torque', log=True, log_scaling = 0.5))
-        layout.addWidget(RVParameterBox(config, 'elevator_torque', log=True, log_scaling = 0.5))
-        layout.addWidget(RVParameterBox(config, 'rod_ratio', '{0:.3f}'))
-        layout.addWidget(RVParameterBox(config, 'forearm_length'))
-        layout.addWidget(RVParameterBox(config, 'elevator_length'))
+        boxes = []
+        boxes.append(RVParameterBox(config, 'min_load', log=True, log_scaling=0.5))
+        boxes.append(RVParameterBox(config, 'actuator_torque', log=True, log_scaling = 0.5))
+        boxes.append(RVParameterBox(config, 'elevator_torque', log=True, log_scaling = 0.5))
+        boxes.append(RVParameterBox(config, 'rod_ratio', '{0:.3f}'))
+        boxes.append(RVParameterBox(config, 'forearm_length'))
+        boxes.append(RVParameterBox(config, 'elevator_length'))
+        for box in boxes:
+            layout.addWidget(box)
+            def changeParam(e, param=box.param_key):
+                window.setCurrentParam(param)
+            box.subscribe('mouseEnter', changeParam)
+
 
     def onChangeElevatorLength(self):
         slider = self.sliders['elevator_length']

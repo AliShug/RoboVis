@@ -13,6 +13,7 @@ from robovis import *
 from robovis import RVArmVis
 
 offset_increment = 1.08
+start_param = 'elevator_length'
 
 class RVWindow(QWidget):
     def __init__(self):
@@ -45,7 +46,6 @@ class RVWindow(QWidget):
             color=Qt.white,
             thickness=3)
         self.main_outline.update(self.ik)
-        # self.generateGhosts()
 
         self.show_heatmap = True
         def toggleHeatmap():
@@ -81,8 +81,9 @@ class RVWindow(QWidget):
         self.view.subscribe('mouseLeave', lambda e: self.arm_vis.clearGraphics())
         self.view.subscribe('mousePress', self.viewClick)
 
-        self.current_param = 'elevator_length'
+        self.current_param = start_param
         self.createIKPool()
+        self.updateGhosts()
         QTimer.singleShot(0, self.asyncPoll)
 
     def viewClick(self, event):
@@ -90,39 +91,8 @@ class RVWindow(QWidget):
             pt = self.view.mapToScene(event.pos())
             self.selected_arm_vis.changeGoal([pt.x(), pt.y()])
 
-    def generateGhosts(self):
-        param = 'elevator_length'
-        for ghost_info in self.ghost_outlines:
-            self.scene.removeItem(ghost_info['outline'].graphicsItem)
-        self.ghost_outlines = deque()
-        # Iterate through offset parameters
-        upper_val = lower_val = self.current_config[param].value
-        # 3 each of higher and lower outlines
-        for i in range(3):
-            config_less = RVConfig(self.current_config)
-            config_more = RVConfig(self.current_config)
-            upper_val *= offset_increment
-            lower_val /= offset_increment
-            config_less['elevator_length'].value = lower_val
-            config_more['elevator_length'].value = upper_val
-            less_outline = RVOutline(self.scene, config=config_less)
-            more_outline = RVOutline(self.scene, config=config_more)
-            self.view.addOutline(less_outline)
-            self.view.addOutline(more_outline)
-            less_info = {
-                'outline': less_outline,
-                'val': lower_val,
-            }
-            more_info = {
-                'outline': more_outline,
-                'val': upper_val,
-            }
-            self.ghost_outlines.appendleft(less_info)
-            self.ghost_outlines.append(more_info)
-        self.updateGhosts()
-
     def updateGhosts(self):
-        p = 'elevator_length'
+        p = self.current_param
         q = self.solvers[p]
         current_val = self.current_config[p].value
         modified = False
@@ -158,57 +128,40 @@ class RVWindow(QWidget):
             solver.solveAsync(new_config)
         # Resolve any changes
         if modified:
-            # Update outlines
             self.latchOutlines()
-            # Update colors
-            # TODO
+        # Update colors
+        for outline in self.outlines:
+            val = outline.solver.data['val']
+            diff = val - current_val
+            denom = abs(current_val*offset_increment**3 - current_val)
+            max_dim = 800
+            if denom > 0:
+                norm_diff = abs(diff) / denom
+            else:
+                norm_diff = 100/max_dim
+            norm_diff = max(norm_diff, 100/max_dim)
+            if diff < 0:
+                color = QColor(50, 50, 255).darker(norm_diff*max_dim)
+                outline.setColor(color)
+            else:
+                color = QColor(230, 230, 50).darker(norm_diff*max_dim)
+                outline.setColor(color)
 
-
-        #     ghost_info = self.ghost_outlines.popleft()
-        #     self.scene.removeItem(ghost_info['outline'].graphicsItem)
-        #     # Create new high ghost
-        #     new_val = self.ghost_outlines[-1]['val'] * offset_increment
-        #     new_config = RVConfig(self.current_config)
-        #     new_config[param].value = new_val
-        #     new_info = {
-        #         'outline': RVOutline(self.scene, config=new_config),
-        #         'val': new_val,
-        #     }
-        #     self.ghost_outlines.append(new_info)
-        #     self.view.addOutline(new_info['outline'])
-        # for i in range(cleared_high):
-        #     ghost_info = self.ghost_outlines.pop()
-        #     self.scene.removeItem(ghost_info['outline'].graphicsItem)
-        #     # Create new low ghost
-        #     new_val = self.ghost_outlines[0]['val'] / offset_increment
-        #     new_config = RVConfig(self.current_config)
-        #     new_config[param].value = new_val
-        #     new_info = {
-        #         'outline': RVOutline(self.scene, config=new_config),
-        #         'val': new_val,
-        #     }
-        #     self.ghost_outlines.appendleft(new_info)
-        #     self.view.addOutline(new_info['outline'])
-        # # Update the outline colors
-        # for ghost_info in self.ghost_outlines:
-        #     outline = ghost_info['outline']
-        #     val = ghost_info['val']
-        #     diff = val - current_val
-        #     norm_diff = abs(diff) / abs(current_val*offset_increment**3 - current_val)
-        #     max_dim = 800
-        #     norm_diff = max(norm_diff, 100/max_dim)
-        #     if diff < 0:
-        #         color = QColor(50, 50, 255).darker(norm_diff*max_dim)
-        #         outline.setColor(color)
-        #     else:
-        #         color = QColor(230, 230, 50).darker(norm_diff*max_dim)
-        #         outline.setColor(color)
+    def setCurrentParam(self, param):
+        print('Setting ', param)
+        if param not in self.solvers.keys():
+            print('Warning: param ', param, ' not currently solved for')
+        else:
+            self.current_param = param
+            self.latchOutlines()
+            self.updateGhosts()
 
     def configModified(self):
         '''Call when the configuration has been modified - regenerates the outline(s)'''
         # self.selected_arm_vis.update()
         self.solvers['main'][0].solveAsync(self.current_config)
         self.updateGhosts()
+        self.solvePerpendicular()
 
     def createOutlines(self):
         self.outlines = deque()
@@ -218,23 +171,45 @@ class RVWindow(QWidget):
     def createIKPool(self):
         # 'None' yields automatic sizing (enough to use all available cores)
         self.ik_pool = Pool(None)
-        self.solvers = {}
-        p = 'elevator_length'
-        q = self.solvers[p] = deque()
-        # 4 each of higher and lower slots
-        for i in range(8):
-            self.solvers[p].append(RVSolver(self.ik_pool))
-        self.latchOutlines()
-        self.solveParamSet(p)
 
+        self.solvers = {}
+        params = [
+            'min_load',
+            'actuator_torque',
+            'elevator_torque',
+            'rod_ratio',
+            'forearm_length',
+            'elevator_length',
+        ]
+
+        # Create the full set of solvers across all parameters
+        for p in params:
+            q = self.solvers[p] = deque()
+            # 4 each of higher and lower slots
+            for i in range(8):
+                self.solvers[p].append(RVSolver(self.ik_pool))
+
+        self.latchOutlines()
+        self.solveParamSet(self.current_param)
+        self.solvePerpendicular()
+
+        # The main/central solver is in a section of its own
         self.solvers['main'] = [RVSolver(self.ik_pool)]
         self.solvers['main'][0].subscribe('ready', self.ikComplete)
 
+    def solvePerpendicular(self):
+        '''Starts pre-solving ghosts for the additional parameters'''
+        for p, q in self.solvers.items():
+            if p in ('main', self.current_param):
+                continue
+            else:
+                self.solveParamSet(p)
+
     def solveParamSet(self, param):
+        '''Begins solving ghost outlines for the given parameter'''
         p = param
         q = self.solvers[p]
         # Iterate through offset parameters and start solvers
-        self.ghost_outlines = deque()
         upper_val = lower_val = self.current_config[p].value
         for i in range(4):
             config_less = RVConfig(self.current_config)
@@ -255,7 +230,7 @@ class RVWindow(QWidget):
         for outline in self.outlines:
             if outline.solver:
                 outline.solver.removeOutline()
-        p = 'elevator_length'
+        p = self.current_param
         q = self.solvers[p]
         for i in range(3):
             outline_l = self.outlines[i]
@@ -274,6 +249,7 @@ class RVWindow(QWidget):
             qApp.processEvents()
 
     def ikComplete(self, ik):
+        '''Called when the main solver completes'''
         self.main_outline.update(ik)
         self.heatmap.update(ik)
         self.histogram.update(ik)

@@ -8,7 +8,7 @@ class RVView(QGraphicsView):
         self.scene = scene
         self.setBackgroundBrush(QBrush(Qt.black))
         self.setRenderHints(QPainter.Antialiasing)
-        self.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
+        self.setFrameStyle(0)
         self.setAlignment(Qt.AlignCenter)
         self.setMinimumSize(400, 300)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)

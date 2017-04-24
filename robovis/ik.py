@@ -50,8 +50,9 @@ class RVSolver(object):
         if self.res == None:
             return
         if self.res.ready():
-            self.ik, exec_stamp = self.res.get()
+            ik, exec_stamp = self.res.get()
             if exec_stamp > self.latest_stamp:
+                self.ik = ik
                 self.latest_stamp = exec_stamp
                 # Notify anyone that cares
                 if self.outline:
@@ -59,7 +60,7 @@ class RVSolver(object):
                 for func in self.subscribers['ready']:
                     func(self.ik)
                 self.ready = True
-                # print('Solver DONE')
+                print('Solver DONE')
 
 
 class RVIK(object):
@@ -68,7 +69,7 @@ class RVIK(object):
         if resolution is not None:
             self.resolution = resolution
         else:
-            self.resolution = 200
+            self.resolution = 100
             if point is not None:
                 self.point_mode = True
                 self.point = point
@@ -315,7 +316,7 @@ class RVIK(object):
                 for contour in contours:
                     self.contours.append((contour - [self.height/2, 0]) * step)
             else:
-                self.contour = None
+                self.contours = None
 
             self.valid_points = np.sum(ok)
             self.valid_indices = np.dstack(np.where(ok)).reshape(self.valid_points, 2)
