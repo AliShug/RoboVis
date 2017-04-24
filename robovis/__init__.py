@@ -1,6 +1,6 @@
 # Note: import order matters here! Main window must come after dependencies
 from .config import RVConfig
-from .ik import RVIK
+from .ik import RVIK, RVSolver
 from .uiext import *
 from .outline import RVOutline
 from .heatmap import RVHeatmap

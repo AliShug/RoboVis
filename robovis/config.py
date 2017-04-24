@@ -33,21 +33,7 @@ class RVConfig(object):
         }
         self.values = {}
         if other:
-            self.values['elevator_length'] = copy.copy(other['elevator_length'])
-            self.values['forearm_length'] = copy.copy(other['forearm_length'])
-            self.values['linkage_length'] = copy.copy(other['linkage_length'])
-            self.values['lower_actuator_length'] = copy.copy(other['lower_actuator_length'])
-            self.values['upper_actuator_length'] = copy.copy(other['upper_actuator_length'])
-            self.values['wrist_length'] = copy.copy(other['wrist_length'])
-            self.values['elevator_weight'] = copy.copy(other['elevator_weight'])
-            self.values['forearm_weight'] = copy.copy(other['forearm_weight'])
-            self.values['linkage_weight'] = copy.copy(other['linkage_weight'])
-            self.values['actuator_weight'] = copy.copy(other['actuator_weight'])
-            self.values['elevator_torque'] = copy.copy(other['elevator_torque'])
-            self.values['actuator_torque'] = copy.copy(other['actuator_torque'])
-            self.values['min_load'] = copy.copy(other['min_load'])
-            for key, param in self.values.items():
-                param.config = self
+            self.set(other)
         else:
             # General configuration
             self.values['elevator_length'] = RVParameterElevator(
@@ -101,6 +87,23 @@ class RVConfig(object):
             label='Rod Ratio',
             min=0.6, max=1.4,
             divisor=1000)
+
+    def set(self, other):
+        self.values['elevator_length'] = copy.copy(other['elevator_length'])
+        self.values['forearm_length'] = copy.copy(other['forearm_length'])
+        self.values['linkage_length'] = copy.copy(other['linkage_length'])
+        self.values['lower_actuator_length'] = copy.copy(other['lower_actuator_length'])
+        self.values['upper_actuator_length'] = copy.copy(other['upper_actuator_length'])
+        self.values['wrist_length'] = copy.copy(other['wrist_length'])
+        self.values['elevator_weight'] = copy.copy(other['elevator_weight'])
+        self.values['forearm_weight'] = copy.copy(other['forearm_weight'])
+        self.values['linkage_weight'] = copy.copy(other['linkage_weight'])
+        self.values['actuator_weight'] = copy.copy(other['actuator_weight'])
+        self.values['elevator_torque'] = copy.copy(other['elevator_torque'])
+        self.values['actuator_torque'] = copy.copy(other['actuator_torque'])
+        self.values['min_load'] = copy.copy(other['min_load'])
+        for key, param in self.values.items():
+            param.config = self
 
     def __getitem__(self, key):
         return self.values[key]

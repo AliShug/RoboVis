@@ -14,9 +14,6 @@ from robovis import RVArmVis
 
 offset_increment = 1.08
 
-def runIK(config, timestamp):
-    return (RVIK(config), timestamp)
-
 class RVWindow(QWidget):
     def __init__(self):
         QWidget.__init__(self)
@@ -79,9 +76,6 @@ class RVWindow(QWidget):
         self.view.subscribe('mouseLeave', lambda e: self.arm_vis.clearGraphics())
         self.view.subscribe('mousePress', self.viewClick)
 
-        self.async_results = []
-        self.latest_result = 0
-        self.result_index = 0
         self.createIKPool()
         QTimer.singleShot(0, self.asyncPoll)
 
@@ -177,27 +171,20 @@ class RVWindow(QWidget):
         '''Call when the configuration has been modified - regenerates the outline(s)'''
         # self.selected_arm_vis.update()
         # self.updateGhosts()
-        copyConfig = RVConfig(self.current_config)
-        self.result_index += 1
-        res = self.ik_pool.apply_async(runIK, [copyConfig, self.result_index])
-        self.async_results.append(res)
+        self.solvers[0].solveAsync(self.current_config)
 
     def createIKPool(self):
         # 'None' yields automatic sizing (enough to use all available cores)
         self.ik_pool = Pool(None)
+        self.solvers = [RVSolver(self.ik_pool)]
+        self.solvers[0].subscribe('ready', self.ikComplete)
 
     def asyncPoll(self):
         while self._active:
             sleep(0.01)
-            # See if any results have finished, apply if needed
-            for res in self.async_results:
-                if res.ready():
-                    ik, stamp = res.get()
-                    if stamp > self.latest_result:
-                        self.latest_result = stamp
-                        self.ikComplete(ik)
-                    self.async_results.remove(res)
-                    break
+            # See if any solvers have finished, apply if needed
+            for solver in self.solvers:
+                solver.poll()
             qApp.processEvents()
 
     def ikComplete(self, ik):

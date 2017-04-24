@@ -2,6 +2,57 @@ import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 
+from robovis import RVConfig
+
+def runIK(config, stamp):
+    return (RVIK(config), stamp)
+
+class RVSolver(object):
+    def __init__(self, pool, config=None):
+        self.subscribers = {
+            'ready': []
+        }
+        self.outline = None
+        self.start_stamp = 0
+        self.latest_stamp = 0
+        self.ready = False
+        self.res = None
+        self.pool = pool
+        if config:
+            self.solveAsync(config)
+
+    def solveAsync(self, config):
+        self.ready = False
+        copyConfig = RVConfig(config)
+        self.res = self.pool.apply_async(runIK, [copyConfig, self.start_stamp])
+        self.start_stamp += 1
+
+    def subscribe(self, event, func):
+        self.subscribers[event].append(func)
+
+    def unsubscribe(self, event, func):
+        self.subscribers[event].remove(func)
+
+    def setOutline(self, outline):
+        self.outline = outline
+
+    def removeOutline(self):
+        self.outline = None
+
+    def poll(self):
+        if self.res == None:
+            return
+        if self.res.ready():
+            ik, exec_stamp = self.res.get()
+            if exec_stamp > self.latest_stamp:
+                self.latest_stamp = exec_stamp
+                # Notify anyone that cares
+                if self.outline:
+                    self.outline.update(ik)
+                for func in self.subscribers['ready']:
+                    func(ik)
+                self.ready = True
+
 
 class RVIK(object):
     def __init__(self, config = None, resolution = None, point = None):
