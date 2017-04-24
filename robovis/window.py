@@ -45,12 +45,23 @@ class RVWindow(QWidget):
         self.ghost_outlines = deque()
         # self.generateGhosts()
 
+        self.show_heatmap = True
+        def toggleHeatmap():
+            self.show_heatmap = not self.show_heatmap
+            if self.show_heatmap:
+                self.heatmap.show()
+            else:
+                self.heatmap.hide()
+
         # Fill in layout
         layout.addWidget(self.view, 1)
         splitter = QWidget()
         splitter_layout = QVBoxLayout(splitter)
         splitter_layout.setContentsMargins(0,0,0,0)
         layout.addWidget(splitter)
+        heatmap_button = QPushButton('Toggle Heatmap')
+        heatmap_button.clicked.connect(toggleHeatmap)
+        splitter_layout.addWidget(heatmap_button)
         splitter_layout.addWidget(paramPane)
         splitter_layout.addWidget(self.histogram)
 
@@ -170,7 +181,7 @@ class RVWindow(QWidget):
         self.result_index += 1
         res = self.ik_pool.apply_async(runIK, [copyConfig, self.result_index])
         self.async_results.append(res)
-    
+
     def createIKPool(self):
         # 'None' yields automatic sizing (enough to use all available cores)
         self.ik_pool = Pool(None)
