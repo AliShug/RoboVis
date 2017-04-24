@@ -7,22 +7,18 @@ from PyQt5.QtGui import *
 from robovis import RVIK
 
 class RVOutline(object):
-    def __init__(self, scene, ik = None, config = None, color=Qt.white, thickness=1):
-        '''Takes an configuration object or completed IK object'''
+    def __init__(self, scene, ik = None, color=Qt.white, thickness=1):
         self.scene = scene
-        if ik:
-            self.ik = ik
-        elif config:
-            self.ik = RVIK(config)
-        else:
-            raise Exception('Must provide an IK object or configuration')
-        self.contours = self.ik.contours
+        self.contours = None
         self.color = color
         self.thickness = thickness
         # Graphics
         self.graphicsItems = []
         self.addPolygon()
-        self.update(self.ik)
+        self.solver = None
+        if ik:
+            self.ik = ik
+            self.update(self.ik)
 
     def addPolygon(self):
         '''Generates a new polygon item'''

@@ -24,8 +24,9 @@ class RVSolver(object):
     def solveAsync(self, config):
         self.ready = False
         copyConfig = RVConfig(config)
-        self.res = self.pool.apply_async(runIK, [copyConfig, self.start_stamp])
         self.start_stamp += 1
+        self.res = self.pool.apply_async(runIK, [copyConfig, self.start_stamp])
+        # print('SOLVING')
 
     def subscribe(self, event, func):
         self.subscribers[event].append(func)
@@ -35,23 +36,29 @@ class RVSolver(object):
 
     def setOutline(self, outline):
         self.outline = outline
+        outline.solver = self
+        if self.ready:
+            outline.update(self.ik)
 
     def removeOutline(self):
+        if self.outline:
+            self.outline.solver = None
         self.outline = None
 
     def poll(self):
         if self.res == None:
             return
         if self.res.ready():
-            ik, exec_stamp = self.res.get()
+            self.ik, exec_stamp = self.res.get()
             if exec_stamp > self.latest_stamp:
                 self.latest_stamp = exec_stamp
                 # Notify anyone that cares
                 if self.outline:
-                    self.outline.update(ik)
+                    self.outline.update(self.ik)
                 for func in self.subscribers['ready']:
-                    func(ik)
+                    func(self.ik)
                 self.ready = True
+                # print('Solver DONE')
 
 
 class RVIK(object):

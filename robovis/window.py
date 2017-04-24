@@ -38,8 +38,8 @@ class RVWindow(QWidget):
         self.ik = RVIK(self.current_config)
         self.heatmap = RVHeatmap(self.scene, self.ik)
         self.histogram = RVLoadHistogram(self.ik)
-        self.main_outline = RVOutline(self.scene, color=Qt.white, thickness=3, ik=self.ik)
         self.ghost_outlines = deque()
+        self.createOutlines()
         # self.generateGhosts()
 
         self.show_heatmap = True
@@ -76,6 +76,7 @@ class RVWindow(QWidget):
         self.view.subscribe('mouseLeave', lambda e: self.arm_vis.clearGraphics())
         self.view.subscribe('mousePress', self.viewClick)
 
+        self.current_param = 'elevator_length'
         self.createIKPool()
         QTimer.singleShot(0, self.asyncPoll)
 
@@ -171,20 +172,71 @@ class RVWindow(QWidget):
         '''Call when the configuration has been modified - regenerates the outline(s)'''
         # self.selected_arm_vis.update()
         # self.updateGhosts()
-        self.solvers[0].solveAsync(self.current_config)
+        self.solvers['main'][0].solveAsync(self.current_config)
+
+    def createOutlines(self):
+        self.outlines = deque()
+        for i in range(6):
+            self.outlines.append(RVOutline(self.scene))
+        self.main_outline = RVOutline(
+            self.scene,
+            color=Qt.white,
+            thickness=3)
+        self.main_outline.update(self.ik)
 
     def createIKPool(self):
         # 'None' yields automatic sizing (enough to use all available cores)
         self.ik_pool = Pool(None)
-        self.solvers = [RVSolver(self.ik_pool)]
-        self.solvers[0].subscribe('ready', self.ikComplete)
+        self.solvers = {}
+        p = 'elevator_length'
+        q = self.solvers[p] = deque()
+        # 4 each of higher and lower slots
+        for i in range(8):
+            self.solvers[p].append(RVSolver(self.ik_pool))
+        self.latchOutlines()
+        self.solveParamSet(p)
+
+        self.solvers['main'] = [RVSolver(self.ik_pool)]
+        self.solvers['main'][0].subscribe('ready', self.ikComplete)
+
+    def solveParamSet(self, param):
+        p = param
+        q = self.solvers[p]
+        # Iterate through offset parameters and start solvers
+        self.ghost_outlines = deque()
+        upper_val = lower_val = self.current_config[p].value
+        for i in range(4):
+            config_less = RVConfig(self.current_config)
+            config_more = RVConfig(self.current_config)
+            upper_val *= offset_increment
+            lower_val /= offset_increment
+            config_less[p].value = lower_val
+            config_more[p].value = upper_val
+            q[3-i].solveAsync(config_less)
+            q[4+i].solveAsync(config_more)
+
+
+    def latchOutlines(self):
+        '''Latches outlines from outline pool to solvers for current param'''
+        for outline in self.outlines:
+            if outline.solver:
+                outline.solver.removeOutline(outline)
+        p = 'elevator_length'
+        q = self.solvers[p]
+        for i in range(3):
+            outline_l = self.outlines[i]
+            outline_r = self.outlines[i*2]
+            q[ i + 1].setOutline(outline_l)
+            q[-i - 2].setOutline(outline_r)
 
     def asyncPoll(self):
         while self._active:
             sleep(0.01)
-            # See if any solvers have finished, apply if needed
-            for solver in self.solvers:
-                solver.poll()
+            # See if any solvers have finished, results are automatically
+            # cascaded out
+            for p, set in self.solvers.items():
+                for solver in set:
+                    solver.poll()
             qApp.processEvents()
 
     def ikComplete(self, ik):
