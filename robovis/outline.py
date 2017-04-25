@@ -7,11 +7,13 @@ from PyQt5.QtGui import *
 from robovis import RVIK
 
 class RVOutline(object):
-    def __init__(self, scene, ik = None, color=Qt.white, thickness=1):
+    def __init__(self, scene, ik = None, color=Qt.white, thickness=1, style=Qt.SolidLine):
         self.scene = scene
         self.contours = None
         self.color = color
         self.thickness = thickness
+        self.style = style
+        self.hidden = False
         # Graphics
         self.graphicsItems = []
         self.addPolygon()
@@ -24,8 +26,13 @@ class RVOutline(object):
 
     def addPolygon(self):
         '''Generates a new polygon item'''
-        item = self.scene.addPolygon(QPolygonF(), pen=QPen(QBrush(self.color), self.thickness))
+        item = self.scene.addPolygon(QPolygonF(), pen=QPen(
+            QBrush(self.color),
+            self.thickness,
+            self.style))
         self.graphicsItems.append(item)
+        if self.hidden:
+            item.hide()
 
     def removePolygon(self):
         '''Removes the last polygon item'''
@@ -33,7 +40,9 @@ class RVOutline(object):
 
     def setColor(self, color):
         for item in self.graphicsItems:
-            item.setPen(QPen(color))
+            pen = item.pen()
+            pen.setColor(color)
+            item.setPen(pen)
         self.color = color
 
     def update(self, ik):
@@ -52,10 +61,19 @@ class RVOutline(object):
                 # Add a new polygon if we've run out
                 if c == len(self.graphicsItems):
                     self.addPolygon()
-                else:
+                elif not self.hidden:
                     self.graphicsItems[c].show()
                 self.graphicsItems[c].setPolygon(poly)
                 c += 1
             # Cleanup unused polygon items
             for i in range(c, len(self.graphicsItems)):
                 self.graphicsItems[i].hide()
+
+    def hide(self):
+        self.hidden = True
+        for item in self.graphicsItems:
+            item.hide()
+
+    def show(self):
+        self.hidden = False
+        self.updateGraphics()

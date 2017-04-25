@@ -148,7 +148,7 @@ class BarChart(QGraphicsView):
         self.centerColor = Qt.black
         self.otherColor = QColor(120, 120, 255)
         self.setFixedSize(150, 140)
-        self.leftMargin = 20
+        self.leftMargin = 0
 
         contentsRect = self.contentsRect()
         rect = QRectF(0, 0, contentsRect.width(), contentsRect.height())

@@ -47,7 +47,7 @@ class RVWindow(QMainWindow):
         self.main_outline = RVOutline(
             self.scene,
             color=Qt.white,
-            thickness=3)
+            thickness=4)
         self.main_outline.update(self.ik)
 
         self.show_heatmap = True
@@ -57,7 +57,15 @@ class RVWindow(QMainWindow):
                 self.heatmap.show()
             else:
                 self.heatmap.hide()
-
+        self.show_ghosts = True
+        def toggleGhosts():
+            self.show_ghosts = not self.show_ghosts
+            if self.show_ghosts:
+                for outline in self.outlines:
+                    outline.show()
+            else:
+                for outline in self.outlines:
+                    outline.hide()
 
         # Arm vis
         self.arm_vis = RVArmVis(self.current_config, self.view)
@@ -79,7 +87,10 @@ class RVWindow(QMainWindow):
         layout.addWidget(splitter)
         heatmap_button = QPushButton('Toggle Heatmap')
         heatmap_button.clicked.connect(toggleHeatmap)
+        ghosts_button = QPushButton('Toggle Ghost Outlines')
+        ghosts_button.clicked.connect(toggleGhosts)
         splitter_layout.addWidget(heatmap_button)
+        splitter_layout.addWidget(ghosts_button)
         splitter_layout.addWidget(paramPane)
         splitter_layout.addWidget(self.histogram)
 
@@ -194,13 +205,13 @@ class RVWindow(QMainWindow):
             if denom > 0:
                 norm_diff = abs(diff) / denom
             else:
-                norm_diff = 100/max_dim
-            norm_diff = max(norm_diff, 100/max_dim)
+                norm_diff = 1
+            norm_diff = 1-norm_diff
             if diff < 0:
-                color = QColor(50, 50, 255).darker(norm_diff*max_dim)
+                color = QColor(50, 50, 255, norm_diff*255)
                 outline.setColor(color)
             else:
-                color = QColor(230, 230, 50).darker(norm_diff*max_dim)
+                color = QColor(230, 230, 50, norm_diff*255)
                 outline.setColor(color)
 
     def setCurrentParam(self, param):
@@ -222,7 +233,10 @@ class RVWindow(QMainWindow):
     def createOutlines(self):
         self.outlines = deque()
         for i in range(6):
-            self.outlines.append(RVOutline(self.scene))
+            self.outlines.append(RVOutline(self.scene,
+                                           color=Qt.white,
+                                           thickness=2.5,
+                                           style=Qt.DashLine))
 
     def createIKPool(self):
         # 'None' yields automatic sizing (enough to use all available cores)
