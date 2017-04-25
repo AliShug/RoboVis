@@ -105,6 +105,15 @@ class RVIK(object):
         else:
             raise Exception('Unsupported parameter for IK adjust {0}'.format(param))
 
+    def sampleLoad(self, point):
+        x = int(point[0] / self.scaling_factor)
+        y = int(self.height/2 - point[1]/self.scaling_factor)
+        if x >= self.loads.shape[0] or y >= self.loads.shape[1] or x < 0 or y < 0:
+            return 0
+        if self.reachable[x, y]:
+            return self.loads[x, y]
+        return 0
+
     # @profile
     def calculate(self):
         '''Calculates the set of IK solutions, revealing the reachable area'''

@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
+import numpy as np
+
 from robovis import *
 
 class RVParameterBox(QGroupBox):
@@ -79,6 +81,7 @@ class RVParameterBox(QGroupBox):
         for func in self.subscribers['mouseEnter']:
             func(event)
 
+
 class RVParamPane(QScrollArea):
     def __init__(self, window, config):
         super(RVParamPane, self).__init__()
@@ -132,8 +135,53 @@ class RVParamPane(QScrollArea):
         self.window.configModified()
 
 
+class BarChart(QGraphicsView):
+    def __init__(self):
+        self.scene = QGraphicsScene()
+        self.bars = []
+        super(BarChart, self).__init__(self.scene)
+        self.setRenderHints(QPainter.Antialiasing)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.setBackgroundBrush(QBrush(Qt.white))
+        self.centerColor = Qt.black
+        self.otherColor = QColor(120, 120, 255)
+        self.setFixedSize(150, 140)
+        self.leftMargin = 20
+
+        contentsRect = self.contentsRect()
+        rect = QRectF(0, 0, contentsRect.width(), contentsRect.height())
+        self.setSceneRect(rect)
+        self.centerOn(rect.center())
+
+    def setData(self, bar_data):
+        for bar in self.bars:
+            bar.hide()
+        if len(bar_data) < 1:
+            return
+        width = self.sceneRect().width() - self.leftMargin
+        height = self.sceneRect().height()
+        data_min = np.min(bar_data)
+        data_max = np.max(bar_data)
+        step = width / len(bar_data)
+        middle_index = int(len(bar_data) / 2)
+        norm = bar_data[middle_index]
+        for i in range(len(bar_data)):
+            if i >= len(self.bars):
+                bar = self.scene.addRect(QRectF(), pen=QPen(Qt.NoPen), brush=QBrush(self.otherColor))
+                self.bars.append(bar)
+            else:
+                bar = self.bars[i]
+                bar.show()
+            data = 0.5*height + (bar_data[i] - norm)/20 * (height - 10)
+            bar.setRect(self.leftMargin + i * step, height - data, step, data)
+        self.bars[middle_index].setBrush(self.centerColor)
+
+
 class RVSelectionPane(QWidget):
-    def __init__(self, selected_arm_vis, hover_arm_vis):
+    def __init__(self, selected_arm_vis, hover_arm_vis,
+                 main_outline, extra_outlines):
         super(RVSelectionPane, self).__init__()
         self.setFixedWidth(160)
 
@@ -141,8 +189,22 @@ class RVSelectionPane(QWidget):
         self.hover = hover_arm_vis
         self.selected.subscribe('changed', self.update)
         self.hover.subscribe('changed', self.update)
+        self.outlines = [
+            extra_outlines[2],
+            extra_outlines[1],
+            extra_outlines[0],
+            extra_outlines[3],
+            extra_outlines[4],
+            extra_outlines[5],
+        ]
+        self.main_outline = main_outline
 
         layout = QVBoxLayout(self)
+
+        layout.addWidget(QLabel('Load Preview'))
+        self.chart = BarChart()
+        layout.addWidget(self.chart)
+
         layout.addWidget(QLabel('Selection'))
         self.selected_label = QLabel('--')
         layout.addWidget(self.selected_label)
@@ -157,11 +219,30 @@ class RVSelectionPane(QWidget):
         return s
 
     def update(self):
+        picked = None
         if self.hover.displayed:
             self.hover_label.setText(self.textFor(self.hover))
+            picked = self.hover
         else:
             self.hover_label.setText('--')
         if self.selected.displayed:
             self.selected_label.setText(self.textFor(self.selected))
+            picked = self.selected
         else:
             self.selected_label.setText('--')
+
+        if picked == None:
+            data = [0]*7
+            self.chart.setData(data)
+        else:
+            data = []
+            for outline in self.outlines:
+                if outline.ik != None:
+                    data.append(outline.ik.sampleLoad(picked.goal))
+                else:
+                    data.append(0)
+            if self.main_outline.ik != None:
+                data.insert(3, self.main_outline.ik.sampleLoad(picked.goal))
+            else:
+                data.insert(3, 0)
+            self.chart.setData(data)

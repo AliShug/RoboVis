@@ -69,7 +69,8 @@ class RVWindow(QMainWindow):
                                          show_coords=False)
 
         # Fill in layout
-        self.selection_pane = RVSelectionPane(self.selected_arm_vis, self.arm_vis)
+        self.selection_pane = RVSelectionPane(self.selected_arm_vis, self.arm_vis,
+                                              self.main_outline, self.outlines)
         layout.addWidget(self.selection_pane)
         layout.addWidget(self.view, 1)
         splitter = QWidget()
@@ -146,7 +147,6 @@ class RVWindow(QMainWindow):
                 self.current_config.loadRaw(raw)
                 print('Loaded config from {0}'.format(path))
 
-
     def updateGhosts(self):
         p = self.current_param
         q = self.solvers[p]
@@ -210,6 +210,7 @@ class RVWindow(QMainWindow):
             self.current_param = param
             self.latchOutlines()
             self.updateGhosts()
+            self.selection_pane.update()
 
     def configModified(self):
         '''Call when the configuration has been modified - regenerates the outline(s)'''

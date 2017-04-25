@@ -19,6 +19,8 @@ class RVOutline(object):
         if ik:
             self.ik = ik
             self.update(self.ik)
+        else:
+            self.ik = None
 
     def addPolygon(self):
         '''Generates a new polygon item'''
@@ -35,6 +37,7 @@ class RVOutline(object):
         self.color = color
 
     def update(self, ik):
+        self.ik = ik
         self.contours = ik.contours
         self.updateGraphics()
 
