@@ -16,7 +16,8 @@ class RVOutline(object):
         self.hidden = False
         # Graphics
         self.graphicsItems = []
-        self.addPolygon()
+        for i in range(6):
+            self.addPolygon()
         self.solver = None
         if ik:
             self.ik = ik

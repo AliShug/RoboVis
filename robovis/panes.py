@@ -88,6 +88,7 @@ class RVParamPane(QScrollArea):
         self.window = window
         self.setFixedWidth(340)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.myWidget = QWidget()
         self.setWidget(self.myWidget)
@@ -215,7 +216,7 @@ class RVSelectionPane(QWidget):
         layout.addStretch(1)
 
     def textFor(self, arm):
-        s = 'Pos: {0} mm\nLoad: {1:.2f} N'.format(arm.goal, arm.res['load'])
+        s = 'Radial: {0} mm\nY: {1} mm\nLoad: {2:.2f} N'.format(arm.goal[0], arm.goal[1], arm.res['load'])
         return s
 
     def update(self):
