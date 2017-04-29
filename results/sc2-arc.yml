@@ -1,0 +1,31 @@
+---
+actuator_torque: 3.0
+actuator_weight: 3
+elevator_length: 945.2
+elevator_torque: !!python/object/apply:numpy.core.multiarray.scalar
+- !!python/object/apply:numpy.dtype
+  args:
+  - f8
+  - 0
+  - 1
+  state: !!python/tuple
+  - 3
+  - <
+  - null
+  - null
+  - null
+  - -1
+  - -1
+  - 0
+- !!binary |
+  QvSb9jL+LEA=
+elevator_weight: 5
+forearm_length: 160.0
+forearm_weight: 5
+linkage_length: 955.5971999999999
+linkage_weight: 5
+lower_actuator_length: 65
+min_load: 14.0
+rod_ratio: 1.011
+upper_actuator_length: 54.4
+wrist_length: 90.52

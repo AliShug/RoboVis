@@ -1,5 +1,4 @@
 from collections import deque
-from multiprocessing import Pool
 import os
 from time import sleep
 

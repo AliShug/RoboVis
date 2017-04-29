@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 from robovis import RVConfig
 
@@ -260,7 +260,6 @@ class RVIK(object):
         thetas = forearm_angles - np.pi/2
         cos_alphas = np.einsum("ijk, ijk -> ij", linkage_dirs, forearm_dirs)
         alphas = np.arccos(cos_alphas) - np.pi/2
-        # w' in calculations
         w = (x_l * np.cos(thetas)) / (x_p * np.cos(alphas))
         theta_sums = thetas + alphas
         sin_theta_sums = np.sin(theta_sums)

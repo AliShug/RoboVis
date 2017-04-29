@@ -1,6 +1,6 @@
 import numpy as np
 
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *

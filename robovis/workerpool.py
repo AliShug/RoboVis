@@ -1,8 +1,5 @@
 from multiprocessing.pool import Pool
-from multiprocessing.queues import SimpleQueue
-from multiprocessing.pool import worker
 import os
-from queue import PriorityQueue
 
 class JobRef(object):
     def __init__(self, func, args, ref=None, priority=1):
